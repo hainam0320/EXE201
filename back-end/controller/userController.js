@@ -1,4 +1,9 @@
-const userRegister = async (req, res) => {
+const User = require('../model/userModel');
+const jwt = require('jsonwebtoken');
+const { hashPassword, comparePassword, generateToken } = require('../utils/authHelper');
+const nodemailer = require('nodemailer');
+
+exports.userRegister = async (req, res) => {
   try {
     const { userName, lastName, email, phone, password } = req.body;
 
@@ -34,7 +39,7 @@ const userRegister = async (req, res) => {
   }
 };
 
-const userLogin = async (req, res) => {
+exports.userLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -58,15 +63,13 @@ const userLogin = async (req, res) => {
       return res.status(400).send({ message: "Invalid password" });
     }
 
-    // ✅ Tạo token
     const token = await generateToken(isUser._id);
 
-    // ✅ Trả về thêm userId và userName để frontend có thể lưu
     return res.status(200).send({ 
       message: "User login successfully", 
       token, 
-      userId: isUser._id, // 📌 Thêm userId
-      userName: isUser.userName, // 📌 Thêm userName (nếu cần)
+      userId: isUser._id,
+      userName: isUser.userName,
       isAdmin: isUser.isAdmin
     });
 
@@ -76,9 +79,7 @@ const userLogin = async (req, res) => {
   }
 };
 
-
-
-const forgetPassword = async (req, res) => {
+exports.forgetPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -103,7 +104,7 @@ const forgetPassword = async (req, res) => {
       },
     });
 
-    const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`; // Sửa lại link
+    const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`;
 
     const receiver = {
       from: process.env.MY_GMAIL,
@@ -120,8 +121,7 @@ const forgetPassword = async (req, res) => {
   }
 };
 
-
-const resetPassword = async (req, res) => {
+exports.resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
     const { password } = req.body;
@@ -145,7 +145,7 @@ const resetPassword = async (req, res) => {
   }
 };
 
-const changePassword = async (req, res) => {
+exports.changePassword = async (req, res) => {
   try {
     const { email, currentPassword, newPassword } = req.body;
 
@@ -183,43 +183,46 @@ const changePassword = async (req, res) => {
     return res.status(500).send({ message: "Something went wrong" });
   }
 };
-const getAllUsers = async (req, res) => {
+
+exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find();
 
     if (!users || users.length === 0) {
-      return res.status(400).json([]); // ✅ Trả về mảng rỗng thay vì object
+      return res.status(400).json([]);
     }
 
-    return res.status(200).json(users); // ✅ Trả về danh sách người dùng trực tiếp
+    return res.status(200).json(users);
   } catch (error) {
-    return res.status(500).json([]); // ✅ Tránh lỗi frontend nếu API lỗi
+    return res.status(500).json([]);
   }
 };
-const getProfile = async (req, res) => {
+
+exports.getProfile = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ message: "Unauthorized: No token provided" });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    const userId = decoded.userId;
+    const userId = decoded.id;
 
-    const user = await User.findById(userId).select("-password"); // Không trả về password
+    const user = await User.findById(userId).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
 
     return res.status(200).json({ message: "User profile retrieved", user });
   } catch (error) {
+    console.error("Profile error:", error);
     return res.status(500).json({ message: "Something went wrong" });
   }
 };
 
-const updateProfile = async (req, res) => {
+exports.updateProfile = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ message: "Unauthorized: No token provided" });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    const userId = decoded.userId;
+    const userId = decoded.id;
 
     const { userName, lastName, phone, email } = req.body;
 
@@ -231,20 +234,19 @@ const updateProfile = async (req, res) => {
     if (phone) user.phone = phone;
     if (email) user.email = email;
 
-
     await user.save();
     return res.status(200).json({ message: "Profile updated successfully", user });
   } catch (error) {
+    console.error("Update profile error:", error);
     return res.status(500).json({ message: "Something went wrong" });
   }
 };
 
-const updateUserRole = async (req, res) => {
+exports.updateUserRole = async (req, res) => {
   try {
     const { userId } = req.params;
-    const requestingUser = req.user; // Lấy user đang thực hiện request
+    const requestingUser = req.user;
 
-    // Chỉ cho phép userId đặc biệt có thể thay đổi quyền người khác
     if (requestingUser._id.toString() !== "67e384ee6c5b22c35962fd78") {
       return res.status(403).json({ message: "Bạn không có quyền thay đổi quyền người dùng!" });
     }
@@ -254,12 +256,10 @@ const updateUserRole = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy người dùng!" });
     }
 
-    // Ngăn chặn tự hạ quyền chính mình
     if (user._id.toString() === "67e384ee6c5b22c35962fd78") {
       return res.status(400).json({ message: "Không thể thay đổi quyền của chính bạn!" });
     }
 
-    // Chuyển đổi quyền (User <-> Admin)
     user.isAdmin = !user.isAdmin;
     await user.save();
 
@@ -268,16 +268,4 @@ const updateUserRole = async (req, res) => {
     console.error("Lỗi cập nhật quyền:", error);
     res.status(500).json({ message: "Lỗi server!" });
   }
-};
-
-module.exports = {
-  userRegister,
-  userLogin,
-  forgetPassword,
-  resetPassword,
-  changePassword,
-  getAllUsers,
-  getProfile,
-  updateProfile,
-  updateUserRole
 };
