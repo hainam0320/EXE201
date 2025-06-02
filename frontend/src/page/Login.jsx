@@ -16,7 +16,7 @@ const Login = ({ setCurrentScreen }) => {
 
       try {
         const response = await authAPI.login({ email, password });
-        const { token, userId, userName, isAdmin } = response.data;
+        const { token, userId, userName, role, isAdmin } = response.data;
 
         // Lưu token vào localStorage
         localStorage.setItem('token', token);
@@ -27,7 +27,7 @@ const Login = ({ setCurrentScreen }) => {
           id: userId,
           name: userName,
           email,
-          role: isAdmin ? 'admin' : 'buyer', // Có thể điều chỉnh logic role tùy thuộc vào backend
+          role: role || (isAdmin ? 'admin' : 'buyer'),
           isAdmin
         };
 
@@ -35,8 +35,18 @@ const Login = ({ setCurrentScreen }) => {
         setCurrentScreen('home');
       } catch (error) {
         console.error('Login error:', error);
-        if (error.response && error.response.data && error.response.data.message) {
-          setError(error.response.data.message);
+        if (error.response && error.response.data) {
+          const errorData = error.response.data;
+          
+          // Xử lý trường hợp tài khoản pending
+          if (errorData.status === 'pending') {
+            const roleText = errorData.requestedRole === 'seller' ? 'người bán' : 'người mua';
+            setError(`Tài khoản ${roleText} của bạn đang chờ admin phê duyệt. Vui lòng đợi hoặc liên hệ admin.`);
+          } else if (errorData.message) {
+            setError(errorData.message);
+          } else {
+            setError('Đăng nhập thất bại. Vui lòng thử lại.');
+          }
         } else {
           setError('Đăng nhập thất bại. Vui lòng thử lại.');
         }

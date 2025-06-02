@@ -8,7 +8,8 @@ const Register = ({ setCurrentScreen }) => {
       email: '',
       phone: '',
       password: '',
-      confirmPassword: ''
+      confirmPassword: '',
+      role: 'buyer'
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -31,10 +32,21 @@ const Register = ({ setCurrentScreen }) => {
         const { confirmPassword, ...registerData } = formData;
         const response = await authAPI.register(registerData);
         
-        setSuccess('Đăng ký thành công! Vui lòng đăng nhập.');
-        setTimeout(() => {
-          setCurrentScreen('login');
-        }, 2000);
+        // Sử dụng message từ backend
+        setSuccess(response.data.message);
+        
+        // Nếu là seller thì không auto chuyển về login ngay
+        if (response.data.needsApproval) {
+            // Seller cần chờ duyệt, không auto redirect
+            setTimeout(() => {
+                setCurrentScreen('login');
+            }, 4000); // Chờ lâu hơn để user đọc message
+        } else {
+            // Buyer có thể đăng nhập ngay
+            setTimeout(() => {
+                setCurrentScreen('login');
+            }, 2000);
+        }
       } catch (error) {
         console.error('Registration error:', error);
         if (error.response && error.response.data && error.response.data.message) {
@@ -118,6 +130,22 @@ const Register = ({ setCurrentScreen }) => {
               required
               disabled={loading}
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Loại tài khoản</label>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+              disabled={loading}
+            >
+              <option value="buyer">Người mua</option>
+              <option value="seller">Người bán</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Người mua: Mua sắm hoa và sản phẩm | Người bán: Bán hoa và quản lý shop
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>

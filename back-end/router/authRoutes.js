@@ -10,7 +10,10 @@ const {
     getProfile,
     updateProfile,
     getAllUsers,
-    updateUserRole
+    updateUserRole,
+    approveSellerRequest,
+    getPendingSellerRequests,
+    getDashboardStats
 } = require('../controller/userController');
 
 // Public routes
@@ -27,5 +30,8 @@ router.put('/change-password', protect, changePassword);
 // Admin routes
 router.get('/users', protect, authorize('admin'), getAllUsers);
 router.put('/users/:id/role', protect, authorize('admin'), updateUserRole);
+router.get('/pending-sellers', protect, authorize('admin'), getPendingSellerRequests);
+router.put('/approve-seller/:userId', protect, authorize('admin'), approveSellerRequest);
+router.get('/dashboard-stats', protect, authorize('admin'), getDashboardStats);
 
 module.exports = router; 

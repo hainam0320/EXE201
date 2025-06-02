@@ -110,6 +110,36 @@ const Header = ({ setCurrentScreen }) => {
                         Lịch sử đơn hàng
                       </button>
                     )}
+                    {currentUser.role === 'seller' && (
+                      <>
+                        <button 
+                          onClick={() => {setCurrentScreen('seller-dashboard'); setShowMenu(false);}}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        >
+                          Dashboard bán hàng
+                        </button>
+                        <button 
+                          onClick={() => {setCurrentScreen('seller-products'); setShowMenu(false);}}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        >
+                          Quản lý sản phẩm
+                        </button>
+                        <button 
+                          onClick={() => {setCurrentScreen('seller-orders'); setShowMenu(false);}}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        >
+                          Đơn hàng bán
+                        </button>
+                      </>
+                    )}
+                    {currentUser.role === 'admin' && (
+                      <button 
+                        onClick={() => {setCurrentScreen('admin-dashboard'); setShowMenu(false);}}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      >
+                        Admin Dashboard
+                      </button>
+                    )}
                     <button 
                       onClick={() => {setCurrentScreen('change-password'); setShowMenu(false);}}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"

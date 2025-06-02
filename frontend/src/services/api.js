@@ -25,6 +25,10 @@ export const authAPI = {
   forgotPassword: (email) => api.post('/auth/forget-password', { email }),
   resetPassword: (token, password) => api.post(`/auth/reset-password/${token}`, { password }),
   changePassword: (data) => api.put('/auth/change-password', data),
+  getPendingSellers: () => api.get('/auth/pending-sellers'),
+  approveSellerRequest: (userId, action) => api.put(`/auth/approve-seller/${userId}`, { action }),
+  getDashboardStats: () => api.get('/auth/dashboard-stats'),
+  getAllUsers: () => api.get('/auth/users'),
 };
 
 export const productAPI = {

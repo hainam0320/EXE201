@@ -5,8 +5,21 @@ const userSchema = new mongoose.Schema({
     email: {type: String, required: true, unique: true},
     phone: {type: String, required: true},
     password: {type: String, required: true},
-    role: {type: String, default: 'user'},
-    status: {type: String, default: 'active'},
+    role: {
+        type: String, 
+        enum: ['user', 'buyer', 'seller', 'admin'], 
+        default: 'user'
+    },
+    status: {
+        type: String, 
+        enum: ['pending', 'active', 'blocked', 'rejected'], 
+        default: 'active'
+    },
+    requestedRole: {
+        type: String,
+        enum: ['buyer', 'seller'],
+        default: null
+    },
     createdAt: {type: Date, default: Date.now},
     isAdmin: {type: Boolean, default: false}
 });
