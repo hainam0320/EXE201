@@ -13,10 +13,14 @@ import ProductDetail from './page/ProductDetail';
 import CartScreen from './components/buyer/Cart';
 import SellerDashboard from './components/seller/SellerDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
+import SellerApproval from './components/admin/SellerApproval';
 import NotFoundScreen from './components/common/NotFoundScreen';
 import Footer from './components/common/Footer';
 import mockProducts from './data/mockProducts';
 import api from './services/api';
+import { BrowserRouter } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 // Import các component khác...
 
 function AppContent() {
@@ -61,7 +65,7 @@ function AppContent() {
             id: userData._id,
             name: userData.userName,
             email: userData.email,
-            role: userData.isAdmin ? 'admin' : 'buyer',
+            role: userData.role || (userData.isAdmin ? 'admin' : 'buyer'),
             isAdmin: userData.isAdmin
           };
           
@@ -136,6 +140,8 @@ function AppContent() {
         return <SellerDashboard setCurrentScreen={setCurrentScreen} />;
       case 'admin-dashboard':
         return <AdminDashboard setCurrentScreen={setCurrentScreen} />;
+      case 'seller-approval':
+        return <SellerApproval setCurrentScreen={setCurrentScreen} />;
       default:
         return <NotFoundScreen setCurrentScreen={setCurrentScreen} />;
     }
@@ -155,9 +161,23 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <AppContent />
-      </CartProvider>
+      <BrowserRouter>
+        <CartProvider>
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={true}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+          />
+          <AppContent />
+        </CartProvider>
+      </BrowserRouter>
     </AuthProvider>
   );
 }

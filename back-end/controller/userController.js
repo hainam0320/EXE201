@@ -5,13 +5,36 @@ const nodemailer = require('nodemailer');
 
 exports.userRegister = async (req, res) => {
   try {
-    const { userName, lastName, email, phone, password } = req.body;
+    const { userName, lastName, email, phone, password, role } = req.body;
+    
+    // Debug log để kiểm tra data nhận được
+    console.log('Registration data received:', {
+      userName, lastName, email, phone, 
+      role: role || 'undefined',
+      bodyKeys: Object.keys(req.body)
+    });
 
     if (!userName || !lastName || !email || !phone || !password) {
       return res
         .status(400)
         .send({ message: "Please provide all require fields" });
     }
+
+    // Logic xử lý role và status
+    let userRole = 'user';
+    let userStatus = 'active';
+    let requestedRole = null;
+
+    if (role === 'buyer') {
+      userRole = 'buyer';
+      userStatus = 'active'; // Buyer được active ngay
+    } else if (role === 'seller') {
+      userRole = 'user'; // Vẫn là user cho đến khi admin duyệt
+      userStatus = 'pending'; // Pending để chờ admin duyệt
+      requestedRole = 'seller'; // Lưu role được yêu cầu
+    }
+    
+    console.log('Final role assigned:', { userRole, userStatus, requestedRole });
 
     const existingUser = await User.findOne({ email });
 
@@ -29,12 +52,30 @@ exports.userRegister = async (req, res) => {
       email,
       phone,
       password: hashedPassword,
+      role: userRole,
+      status: userStatus,
+      requestedRole: requestedRole,
     });
+
+    console.log('User created:', { 
+      role: newUser.role, 
+      status: newUser.status, 
+      requestedRole: newUser.requestedRole 
+    });
+
+    // Tùy chỉnh message dựa trên role
+    let message = "User register successfully";
+    if (role === 'seller') {
+      message = "Đăng ký thành công! Tài khoản người bán của bạn đang chờ admin phê duyệt.";
+    } else if (role === 'buyer') {
+      message = "Đăng ký thành công! Bạn có thể đăng nhập ngay.";
+    }
 
     return res
       .status(201)
-      .send({ message: "User register successfully", newUser });
+      .send({ message, newUser, needsApproval: role === 'seller' });
   } catch (error) {
+    console.error('Registration error:', error);
     return res.status(500).send({ message: "Something went wrong" });
   }
 };
@@ -57,6 +98,29 @@ exports.userLogin = async (req, res) => {
         .send({ message: "User not found, please register" });
     }
 
+    // Kiểm tra status của user
+    if (isUser.status === 'pending') {
+      return res
+        .status(403)
+        .send({ 
+          message: "Tài khoản của bạn đang chờ phê duyệt. Vui lòng liên hệ admin.",
+          status: 'pending',
+          requestedRole: isUser.requestedRole
+        });
+    }
+
+    if (isUser.status === 'blocked') {
+      return res
+        .status(403)
+        .send({ message: "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ admin." });
+    }
+
+    if (isUser.status === 'rejected') {
+      return res
+        .status(403)
+        .send({ message: "Yêu cầu tài khoản của bạn đã bị từ chối. Vui lòng liên hệ admin." });
+    }
+
     const isMatchPassword = await comparePassword(password, isUser.password);
 
     if (!isMatchPassword) {
@@ -70,6 +134,8 @@ exports.userLogin = async (req, res) => {
       token, 
       userId: isUser._id,
       userName: isUser.userName,
+      role: isUser.role,
+      status: isUser.status,
       isAdmin: isUser.isAdmin
     });
 
@@ -285,5 +351,221 @@ exports.updateUserRole = async (req, res) => {
   } catch (error) {
     console.error("Lỗi cập nhật quyền:", error);
     res.status(500).json({ message: "Lỗi server!" });
+  }
+};
+
+// Approve seller request
+exports.approveSellerRequest = async (req, res) => {
+  try {
+    console.log('=== APPROVE SELLER REQUEST - DETAILED DEBUG ===');
+    console.log('Request params:', req.params);
+    console.log('Request body:', req.body);
+    console.log('userId:', req.params.userId);
+    console.log('action:', req.body.action);
+
+    const { userId } = req.params;
+    const { action } = req.body;
+
+    if (!userId || !action) {
+      console.log('Missing required fields:', { userId, action });
+      return res.status(400).json({ message: "Thiếu thông tin cần thiết!" });
+    }
+
+    console.log('Finding user with ID:', userId);
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      console.log('User not found with ID:', userId);
+      return res.status(404).json({ message: "Không tìm thấy người dùng!" });
+    }
+
+    console.log('User found:', {
+      id: user._id,
+      email: user.email,
+      status: user.status,
+      role: user.role,
+      requestedRole: user.requestedRole
+    });
+
+    // Kiểm tra điều kiện hợp lệ
+    const isValidRequest = user.status === 'pending' && user.requestedRole === 'seller';
+    console.log('Request validation:', {
+      currentStatus: user.status,
+      currentRequestedRole: user.requestedRole,
+      isValidRequest
+    });
+
+    if (!isValidRequest) {
+      console.log('Invalid request conditions:', {
+        status: user.status,
+        requestedRole: user.requestedRole
+      });
+      return res.status(400).json({ 
+        message: "Không có yêu cầu seller nào để xử lý!",
+        details: {
+          status: user.status,
+          requestedRole: user.requestedRole
+        }
+      });
+    }
+
+    if (action === 'approve') {
+      console.log('Starting approval process...');
+      
+      // Lưu trạng thái cũ để debug
+      const oldState = {
+        role: user.role,
+        status: user.status,
+        requestedRole: user.requestedRole
+      };
+      console.log('Old state:', oldState);
+
+      // Cập nhật thông tin
+      const updateResult = await User.findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            role: 'seller',
+            status: 'active',
+            requestedRole: null
+          }
+        },
+        { new: true, runValidators: true }
+      );
+
+      console.log('Update result:', updateResult);
+
+      if (!updateResult) {
+        throw new Error('Failed to update user');
+      }
+
+      return res.json({ 
+        message: "Đã duyệt tài khoản seller thành công!", 
+        user: updateResult
+      });
+    } else if (action === 'reject') {
+      console.log('Rejecting seller request...');
+      const updateResult = await User.findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            status: 'rejected',
+            requestedRole: null
+          }
+        },
+        { new: true, runValidators: true }
+      );
+
+      if (!updateResult) {
+        throw new Error('Failed to update user');
+      }
+
+      return res.json({ 
+        message: "Đã từ chối yêu cầu seller!", 
+        user: updateResult 
+      });
+    } else {
+      console.log('Invalid action:', action);
+      return res.status(400).json({ message: "Action không hợp lệ!" });
+    }
+  } catch (error) {
+    console.error("=== ERROR IN APPROVE SELLER ===");
+    console.error("Error details:", error);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+    return res.status(500).json({ 
+      message: "Lỗi server!", 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+};
+
+// Get pending seller requests
+exports.getPendingSellerRequests = async (req, res) => {
+  try {
+    const pendingUsers = await User.find({ 
+      status: 'pending', 
+      requestedRole: 'seller' 
+    }).select('-password');
+
+    res.json({ 
+      message: "Danh sách yêu cầu seller", 
+      users: pendingUsers,
+      count: pendingUsers.length
+    });
+  } catch (error) {
+    console.error("Lỗi lấy danh sách pending:", error);
+    res.status(500).json({ message: "Lỗi server!" });
+  }
+};
+
+// Get dashboard statistics
+exports.getDashboardStats = async (req, res) => {
+  try {
+    // Đếm tổng số users
+    const totalUsers = await User.countDocuments();
+    
+    // Đếm users theo role
+    const usersByRole = await User.aggregate([
+      { $group: { _id: '$role', count: { $sum: 1 } } }
+    ]);
+    
+    // Đếm users theo status
+    const usersByStatus = await User.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } } }
+    ]);
+    
+    // Đếm pending sellers
+    const pendingSellers = await User.countDocuments({ 
+      status: 'pending', 
+      requestedRole: 'seller' 
+    });
+    
+    // Users đăng ký trong 30 ngày qua
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const newUsersLast30Days = await User.countDocuments({
+      createdAt: { $gte: thirtyDaysAgo }
+    });
+    
+    // Users đăng ký hôm nay
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const newUsersToday = await User.countDocuments({
+      createdAt: { $gte: today, $lt: tomorrow }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        totalUsers,
+        usersByRole: usersByRole.reduce((acc, item) => {
+          acc[item._id] = item.count;
+          return acc;
+        }, {}),
+        usersByStatus: usersByStatus.reduce((acc, item) => {
+          acc[item._id] = item.count;
+          return acc;
+        }, {}),
+        pendingSellers,
+        newUsersLast30Days,
+        newUsersToday,
+        // Mock data cho orders và products (sẽ thay thế khi có model tương ứng)
+        totalOrders: 0,
+        totalProducts: 0,
+        totalRevenue: 0
+      }
+    });
+  } catch (error) {
+    console.error("Dashboard stats error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error fetching dashboard statistics" 
+    });
   }
 };
