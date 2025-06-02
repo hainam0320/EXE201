@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:9999/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -22,6 +22,9 @@ export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
   logout: () => api.post('/auth/logout'),
+  forgotPassword: (email) => api.post('/auth/forget-password', { email }),
+  resetPassword: (token, password) => api.post(`/auth/reset-password/${token}`, { password }),
+  changePassword: (data) => api.put('/auth/change-password', data),
 };
 
 export const productAPI = {

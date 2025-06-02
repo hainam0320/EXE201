@@ -1,26 +1,60 @@
 import React, { useState } from 'react';
+import { authAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
-const Login = ({ setCurrentUser, setCurrentScreen }) => {
+const Login = ({ setCurrentScreen }) => {
+    const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole] = useState('buyer');
-  
-    const handleLogin = (e) => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleLogin = async (e) => {
       e.preventDefault();
-      // Mock login
-      const user = {
-        id: 1,
-        name: role === 'admin' ? 'Admin' : role === 'seller' ? 'Người bán' : 'Khách hàng',
-        email,
-        role
-      };
-      setCurrentUser(user);
-      setCurrentScreen('home');
+      setLoading(true);
+      setError('');
+
+      try {
+        const response = await authAPI.login({ email, password });
+        const { token, userId, userName, isAdmin } = response.data;
+
+        // Lưu token vào localStorage
+        localStorage.setItem('token', token);
+        localStorage.setItem('userId', userId);
+
+        // Tạo user object dựa trên response từ server
+        const user = {
+          id: userId,
+          name: userName,
+          email,
+          role: isAdmin ? 'admin' : 'buyer', // Có thể điều chỉnh logic role tùy thuộc vào backend
+          isAdmin
+        };
+
+        login(user);
+        setCurrentScreen('home');
+      } catch (error) {
+        console.error('Login error:', error);
+        if (error.response && error.response.data && error.response.data.message) {
+          setError(error.response.data.message);
+        } else {
+          setError('Đăng nhập thất bại. Vui lòng thử lại.');
+        }
+      } finally {
+        setLoading(false);
+      }
     };
-  
+
     return (
       <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
         <h2 className="text-2xl font-bold text-center mb-6">Đăng nhập</h2>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -30,6 +64,7 @@ const Login = ({ setCurrentUser, setCurrentScreen }) => {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               required
+              disabled={loading}
             />
           </div>
           <div>
@@ -40,25 +75,31 @@ const Login = ({ setCurrentUser, setCurrentScreen }) => {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               required
+              disabled={loading}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+          
+          <div className="text-right">
+            <button 
+              type="button"
+              onClick={() => setCurrentScreen('forgot-password')}
+              className="text-sm text-pink-600 hover:underline"
+              disabled={loading}
             >
-              <option value="buyer">Người mua</option>
-              <option value="seller">Người bán</option>
-              <option value="admin">Admin</option>
-            </select>
+              Quên mật khẩu?
+            </button>
           </div>
+          
           <button
             type="submit"
-            className="w-full bg-pink-600 text-white py-2 rounded-md hover:bg-pink-700 transition-colors"
+            disabled={loading}
+            className={`w-full py-2 rounded-md transition-colors ${
+              loading 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-pink-600 hover:bg-pink-700'
+            } text-white`}
           >
-            Đăng nhập
+            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </button>
         </form>
         <p className="text-center mt-4 text-sm text-gray-600">
@@ -66,6 +107,7 @@ const Login = ({ setCurrentUser, setCurrentScreen }) => {
           <button 
             onClick={() => setCurrentScreen('register')}
             className="text-pink-600 hover:underline ml-1"
+            disabled={loading}
           >
             Đăng ký ngay
           </button>

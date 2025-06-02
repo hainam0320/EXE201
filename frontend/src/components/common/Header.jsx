@@ -3,10 +3,16 @@ import { ShoppingCart, Heart, User, Search, Menu, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 
-const Header = ({ setCurrentScreen, setCurrentUser }) => {
-  const { currentUser } = useAuth();
+const Header = ({ setCurrentScreen }) => {
+  const { currentUser, logout } = useAuth();
   const { cartItems } = useCart();
   const [showMenu, setShowMenu] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    setCurrentScreen('login');
+    setShowMenu(false);
+  };
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
@@ -111,7 +117,7 @@ const Header = ({ setCurrentScreen, setCurrentUser }) => {
                       Đổi mật khẩu
                     </button>
                     <button 
-                      onClick={() => {setCurrentUser(null); setCurrentScreen('login'); setShowMenu(false);}}
+                      onClick={handleLogout}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                     >
                       Đăng xuất

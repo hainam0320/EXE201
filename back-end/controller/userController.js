@@ -104,13 +104,31 @@ exports.forgetPassword = async (req, res) => {
       },
     });
 
-    const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`;
+    const resetLink = `${process.env.CLIENT_URL}?action=reset-password&token=${token}`;
 
     const receiver = {
       from: process.env.MY_GMAIL,
       to: email,
-      subject: "Password Reset Request",
-      text: `Click on this link to reset your password: ${resetLink}`,
+      subject: "🌸 HoaMuse - Đặt lại mật khẩu",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #ec4899;">🌸 HoaMuse</h2>
+          <h3>Yêu cầu đặt lại mật khẩu</h3>
+          <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>
+          <p>Vui lòng click vào nút bên dưới để đặt lại mật khẩu:</p>
+          <a href="${resetLink}" style="display: inline-block; background-color: #ec4899; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0;">
+            Đặt lại mật khẩu
+          </a>
+          <p><strong>Lưu ý:</strong> Link này sẽ hết hạn sau 1 giờ.</p>
+          <p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>
+          <hr style="margin: 30px 0;">
+          <p style="color: #666; font-size: 12px;">
+            Email này được gửi tự động từ hệ thống HoaMuse.<br>
+            Vui lòng không trả lời email này.
+          </p>
+        </div>
+      `,
+      text: `Click vào link này để đặt lại mật khẩu: ${resetLink}. Link sẽ hết hạn sau 1 giờ.`,
     };
 
     await transporter.sendMail(receiver);

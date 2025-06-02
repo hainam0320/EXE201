@@ -1,81 +1,158 @@
 import React, { useState } from 'react';
+import { authAPI } from '../services/api';
 
 const Register = ({ setCurrentScreen }) => {
     const [formData, setFormData] = useState({
-      name: '',
+      userName: '',
+      lastName: '',
       email: '',
+      phone: '',
       password: '',
-      confirmPassword: '',
-      role: 'buyer'
+      confirmPassword: ''
     });
-  
-    const handleSubmit = (e) => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+
+    const handleSubmit = async (e) => {
       e.preventDefault();
-      // Mock registration
-      alert('Đăng ký thành công!');
-      setCurrentScreen('login');
+      setLoading(true);
+      setError('');
+      setSuccess('');
+
+      // Validate password confirmation
+      if (formData.password !== formData.confirmPassword) {
+        setError('Mật khẩu xác nhận không khớp');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { confirmPassword, ...registerData } = formData;
+        const response = await authAPI.register(registerData);
+        
+        setSuccess('Đăng ký thành công! Vui lòng đăng nhập.');
+        setTimeout(() => {
+          setCurrentScreen('login');
+        }, 2000);
+      } catch (error) {
+        console.error('Registration error:', error);
+        if (error.response && error.response.data && error.response.data.message) {
+          setError(error.response.data.message);
+        } else {
+          setError('Đăng ký thất bại. Vui lòng thử lại.');
+        }
+      } finally {
+        setLoading(false);
+      }
     };
-  
+
+    const handleInputChange = (e) => {
+      setFormData({
+        ...formData,
+        [e.target.name]: e.target.value
+      });
+    };
+
     return (
       <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
         <h2 className="text-2xl font-bold text-center mb-6">Đăng ký</h2>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+            {success}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Họ tên</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tên</label>
             <input
               type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              name="userName"
+              value={formData.userName}
+              onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               required
+              disabled={loading}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Họ</label>
+            <input
+              type="text"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+              required
+              disabled={loading}
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
               type="email"
+              name="email"
               value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               required
+              disabled={loading}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+            <input
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+              required
+              disabled={loading}
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
             <input
               type="password"
+              name="password"
               value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               required
+              disabled={loading}
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu</label>
             <input
               type="password"
+              name="confirmPassword"
               value={formData.confirmPassword}
-              onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+              onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               required
+              disabled={loading}
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
-            <select
-              value={formData.role}
-              onChange={(e) => setFormData({...formData, role: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-            >
-              <option value="buyer">Người mua</option>
-              <option value="seller">Người bán</option>
-            </select>
           </div>
           <button
             type="submit"
-            className="w-full bg-pink-600 text-white py-2 rounded-md hover:bg-pink-700 transition-colors"
+            disabled={loading}
+            className={`w-full py-2 rounded-md transition-colors ${
+              loading 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-pink-600 hover:bg-pink-700'
+            } text-white`}
           >
-            Đăng ký
+            {loading ? 'Đang đăng ký...' : 'Đăng ký'}
           </button>
         </form>
         <p className="text-center mt-4 text-sm text-gray-600">
@@ -83,6 +160,7 @@ const Register = ({ setCurrentScreen }) => {
           <button 
             onClick={() => setCurrentScreen('login')}
             className="text-pink-600 hover:underline ml-1"
+            disabled={loading}
           >
             Đăng nhập
           </button>
