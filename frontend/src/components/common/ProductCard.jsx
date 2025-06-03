@@ -1,14 +1,34 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Eye } from 'lucide-react';
+import { ShoppingCart, Heart } from 'lucide-react';
+import { useWishlist } from '../../context/WishlistContext';
+import { useAuth } from '../../context/AuthContext';
 
-const ProductCard = ({ product, onAddToCart, onViewDetail }) => {
+const ProductCard = ({ product, onAddToCart }) => {
+  const { currentUser } = useAuth();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  
   if (!product) return null;
 
   const handleAddToCart = (e) => {
     e.preventDefault();
     if (onAddToCart) {
       onAddToCart(product);
+    }
+  };
+
+  const handleToggleWishlist = async (e) => {
+    e.preventDefault();
+    if (!currentUser) {
+      // Redirect to login or show login modal
+      return;
+    }
+
+    const productId = product._id;
+    if (isInWishlist(productId)) {
+      await removeFromWishlist(productId);
+    } else {
+      await addToWishlist(productId);
     }
   };
 
@@ -42,14 +62,15 @@ const ProductCard = ({ product, onAddToCart, onViewDetail }) => {
           
           <div className="flex space-x-2">
             <button
-              onClick={(e) => {
-                e.preventDefault();
-                onViewDetail && onViewDetail(product._id);
-              }}
-              className="p-2 text-gray-600 hover:text-pink-600 transition-colors"
-              title="Xem chi tiết"
+              onClick={handleToggleWishlist}
+              className={`p-2 transition-colors ${
+                isInWishlist(product._id)
+                  ? 'text-pink-600'
+                  : 'text-gray-600 hover:text-pink-600'
+              }`}
+              title={isInWishlist(product._id) ? 'Xóa khỏi yêu thích' : 'Thêm vào yêu thích'}
             >
-              <Eye className="w-5 h-5" />
+              <Heart className={`w-5 h-5 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
             </button>
 
             <button

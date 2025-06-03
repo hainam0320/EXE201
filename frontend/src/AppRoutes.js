@@ -18,8 +18,11 @@ import SellerDashboard from './components/seller/SellerDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
 import SellerApproval from './components/admin/SellerApproval';
 import NotFoundScreen from './components/common/NotFoundScreen';
+import Wishlist from './page/Wishlist';
+import Profile from './page/Profile';
 import BlogList from './page/BlogList';
 import BlogDetail from './page/BlogDetail';
+
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -51,6 +54,7 @@ function AppRoutes() {
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/blog" element={<BlogList />} />
           <Route path="/blog/:id" element={<BlogDetail />} />
+
           
           {/* Protected Routes */}
           <Route 
@@ -58,6 +62,22 @@ function AppRoutes() {
             element={
               <ProtectedRoute>
                 <ChangePassword />
+              </ProtectedRoute>
+            } 
+          />
+           <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/wishlist" 
+            element={
+              <ProtectedRoute allowedRoles={['buyer']}>
+                <Wishlist />
               </ProtectedRoute>
             } 
           />
