@@ -29,6 +29,8 @@ export const authAPI = {
   approveSellerRequest: (userId, action) => api.put(`/auth/approve-seller/${userId}`, { action }),
   getDashboardStats: () => api.get('/auth/dashboard-stats'),
   getAllUsers: () => api.get('/auth/users'),
+  getProfile: () => api.get('/auth/profile'),
+  updateProfile: (data) => api.put('/auth/profile', data)
 };
 
 export const productAPI = {
@@ -54,6 +56,13 @@ export const orderAPI = {
   create: (order) => api.post('/orders', order),
   getByUser: (userId) => api.get(`/orders/user/${userId}`),
   updateStatus: (id, status) => api.patch(`/orders/${id}/status`, { status }),
+};
+
+export const wishlistAPI = {
+  getWishlist: () => api.get('/wishlist'),
+  addToWishlist: (productId) => api.post('/wishlist', { productId }),
+  removeFromWishlist: (productId) => api.delete(`/wishlist/${productId}`),
+  checkWishlist: (productId) => api.get(`/wishlist/check/${productId}`)
 };
 
 export default api;

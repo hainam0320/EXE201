@@ -16,6 +16,12 @@ const Header = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('Current User:', currentUser);
+    console.log('User Role:', currentUser?.role);
+    console.log('Is Buyer?', currentUser?.role === 'buyer');
+  }, [currentUser]);
+
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowSearch(false);
@@ -176,7 +182,7 @@ const Header = () => {
               )}
             </div>
             
-            {currentUser && currentUser.role === 'buyer' && (
+            {currentUser && (
               <>
                 <Link 
                   to="/wishlist"
@@ -184,18 +190,21 @@ const Header = () => {
                 >
                   <Heart className="h-5 w-5" />
                 </Link>
-                <Link 
-                  to="/cart"
-                  className="p-2 hover:bg-gray-100 rounded-full relative"
-                >
-                  <ShoppingCart className="h-5 w-5" />
-                  {cartItems.length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-pink-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {cartItems.length}
-                    </span>
-                  )}
-                </Link>
               </>
+            )}
+
+            {currentUser && currentUser.role === 'buyer' && (
+              <Link 
+                to="/cart"
+                className="p-2 hover:bg-gray-100 rounded-full relative"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {cartItems.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-pink-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartItems.length}
+                  </span>
+                )}
+              </Link>
             )}
 
             {currentUser ? (

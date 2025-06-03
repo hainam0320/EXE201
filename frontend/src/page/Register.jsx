@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -198,7 +197,7 @@ const Register = () => {
             }}
           >
             Đăng nhập
-          </Link>
+          </button>
         </p>
       </div>
     );
