@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authAPI } from '../services/api';
 
-const ResetPassword = ({ setCurrentScreen, token }) => {
+const ResetPassword = () => {
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const token = searchParams.get('token');
+    
     const [formData, setFormData] = useState({
         password: '',
         confirmPassword: ''
@@ -43,7 +48,7 @@ const ResetPassword = ({ setCurrentScreen, token }) => {
             
             // Chuyển về trang login sau 2 giây
             setTimeout(() => {
-                setCurrentScreen('login');
+                navigate('/login');
             }, 2000);
         } catch (error) {
             console.error('Reset password error:', error);
@@ -73,7 +78,7 @@ const ResetPassword = ({ setCurrentScreen, token }) => {
                     Token không hợp lệ hoặc đã hết hạn.
                 </div>
                 <button 
-                    onClick={() => setCurrentScreen('forgot-password')}
+                    onClick={() => navigate('/forgot-password')}
                     className="w-full bg-pink-600 text-white py-2 rounded-md hover:bg-pink-700 transition-colors"
                 >
                     Gửi lại link đặt lại mật khẩu
@@ -148,7 +153,7 @@ const ResetPassword = ({ setCurrentScreen, token }) => {
 
             <div className="mt-6 text-center">
                 <button 
-                    onClick={() => setCurrentScreen('login')}
+                    onClick={() => navigate('/login')}
                     className="text-pink-600 hover:underline text-sm"
                     disabled={loading}
                 >

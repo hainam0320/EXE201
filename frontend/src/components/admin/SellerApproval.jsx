@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import { Check, X, Clock, User, Mail, Phone, Calendar } from 'lucide-react';
 
-const SellerApproval = ({ setCurrentScreen }) => {
+const SellerApproval = () => {
+    const navigate = useNavigate();
     const [pendingSellers, setPendingSellers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState({});
@@ -97,7 +99,7 @@ const SellerApproval = ({ setCurrentScreen }) => {
                         Phê duyệt tài khoản Seller
                     </h1>
                     <button
-                        onClick={() => setCurrentScreen('admin-dashboard')}
+                        onClick={() => navigate('/admin/dashboard')}
                         className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
                     >
                         ← Quay lại Dashboard

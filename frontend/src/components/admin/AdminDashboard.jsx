@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BarChart3, Users, Package, ShoppingCart, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { authAPI } from '../../services/api';
 
-const AdminDashboard = ({ setCurrentScreen }) => {
+const AdminDashboard = () => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('overview');
     const [pendingCount, setPendingCount] = useState(0);
     const [dashboardStats, setDashboardStats] = useState({
@@ -270,7 +272,7 @@ const AdminDashboard = ({ setCurrentScreen }) => {
                          'Không có yêu cầu nào'}
                       </p>
                       <button
-                        onClick={() => setCurrentScreen('seller-approval')}
+                        onClick={() => navigate('/admin/seller-approval')}
                         className="w-full bg-yellow-600 text-white py-2 px-4 rounded-md hover:bg-yellow-700 transition-colors"
                       >
                         Xem yêu cầu
@@ -318,6 +320,26 @@ const AdminDashboard = ({ setCurrentScreen }) => {
                     </div>
                   </div>
                 </div>
+
+                {/* Pending Sellers Card */}
+                {pendingCount > 0 && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Clock className="h-6 w-6 text-yellow-600 mr-2" />
+                        <h3 className="text-lg font-semibold text-yellow-800">
+                          Yêu cầu seller chờ duyệt
+                        </h3>
+                      </div>
+                      <button
+                        onClick={() => navigate('/admin/seller-approval')}
+                        className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-md hover:bg-yellow-200"
+                      >
+                        Xem {pendingCount} yêu cầu →
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
   
@@ -333,7 +355,7 @@ const AdminDashboard = ({ setCurrentScreen }) => {
                       {usersLoading ? 'Đang tải...' : 'Làm mới'}
                     </button>
                     <button
-                      onClick={() => setCurrentScreen('seller-approval')}
+                      onClick={() => navigate('/admin/seller-approval')}
                       className="flex items-center px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
                     >
                       <Clock className="h-4 w-4 mr-2" />
@@ -440,7 +462,7 @@ const AdminDashboard = ({ setCurrentScreen }) => {
                                   
                                   {user.status === 'pending' && user.requestedRole === 'seller' && (
                                     <button 
-                                      onClick={() => setCurrentScreen('seller-approval')}
+                                      onClick={() => navigate('/admin/seller-approval')}
                                       className="text-yellow-600 hover:text-yellow-800"
                                     >
                                       Duyệt
