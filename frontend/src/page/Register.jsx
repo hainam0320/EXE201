@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
+import { useNavigate, Link } from 'react-router-dom';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -190,10 +191,14 @@ const Register = () => {
           <button 
             onClick={() => navigate('/login')}
             className="text-pink-600 hover:underline ml-1"
-            disabled={loading}
+            onClick={(e) => {
+              if (loading) {
+                e.preventDefault();
+              }
+            }}
           >
             Đăng nhập
-          </button>
+          </Link>
         </p>
       </div>
     );
