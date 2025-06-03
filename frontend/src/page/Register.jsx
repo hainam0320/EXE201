@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -187,8 +188,8 @@ const Register = () => {
         </form>
         <p className="text-center mt-4 text-sm text-gray-600">
           Đã có tài khoản? 
-          <Link 
-            to="/login"
+          <button 
+            onClick={() => navigate('/login')}
             className="text-pink-600 hover:underline ml-1"
             onClick={(e) => {
               if (loading) {

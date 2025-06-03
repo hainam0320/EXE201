@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 
-const ForgotPassword = ({ setCurrentScreen }) => {
+const ForgotPassword = () => {
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -78,7 +80,7 @@ const ForgotPassword = ({ setCurrentScreen }) => {
 
             <div className="mt-6 text-center space-y-2">
                 <button 
-                    onClick={() => setCurrentScreen('login')}
+                    onClick={() => navigate('/login')}
                     className="text-pink-600 hover:underline text-sm"
                     disabled={loading}
                 >
@@ -87,7 +89,7 @@ const ForgotPassword = ({ setCurrentScreen }) => {
                 <div className="text-sm text-gray-600">
                     Chưa có tài khoản? 
                     <button 
-                        onClick={() => setCurrentScreen('register')}
+                        onClick={() => navigate('/register')}
                         className="text-pink-600 hover:underline ml-1"
                         disabled={loading}
                     >
