@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, Users, Package, ShoppingCart, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { BarChart3, Users, Package, ShoppingCart, Clock, CheckCircle, XCircle, BookOpen } from 'lucide-react';
 import { authAPI } from '../../services/api';
+import BlogManagement from './BlogManagement';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -114,6 +115,7 @@ const AdminDashboard = () => {
       { id: 'users', label: 'Người dùng', icon: Users },
       { id: 'products', label: 'Sản phẩm', icon: Package },
       { id: 'orders', label: 'Đơn hàng', icon: ShoppingCart },
+      { id: 'blogs', label: 'Quản lý Blog', icon: BookOpen },
     ];
   
     return (
@@ -504,6 +506,10 @@ const AdminDashboard = () => {
                   </p>
                 </div>
               </div>
+            )}
+
+            {activeTab === 'blogs' && (
+              <BlogManagement />
             )}
           </div>
         </div>
