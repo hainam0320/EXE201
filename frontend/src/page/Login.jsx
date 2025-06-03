@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { authAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
 
-const Login = ({ setCurrentScreen }) => {
+const Login = () => {
     const { login } = useAuth();
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -32,7 +34,7 @@ const Login = ({ setCurrentScreen }) => {
         };
 
         login(user);
-        setCurrentScreen('home');
+        navigate('/');
       } catch (error) {
         console.error('Login error:', error);
         if (error.response && error.response.data) {
@@ -90,14 +92,12 @@ const Login = ({ setCurrentScreen }) => {
           </div>
           
           <div className="text-right">
-            <button 
-              type="button"
-              onClick={() => setCurrentScreen('forgot-password')}
+            <Link 
+              to="/forgot-password"
               className="text-sm text-pink-600 hover:underline"
-              disabled={loading}
             >
               Quên mật khẩu?
-            </button>
+            </Link>
           </div>
           
           <button
@@ -114,13 +114,12 @@ const Login = ({ setCurrentScreen }) => {
         </form>
         <p className="text-center mt-4 text-sm text-gray-600">
           Chưa có tài khoản? 
-          <button 
-            onClick={() => setCurrentScreen('register')}
+          <Link 
+            to="/register"
             className="text-pink-600 hover:underline ml-1"
-            disabled={loading}
           >
             Đăng ký ngay
-          </button>
+          </Link>
         </p>
       </div>
     );

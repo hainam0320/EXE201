@@ -1,8 +1,72 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import ProductCard from '../components/common/ProductCard';
-import { mockProducts, mockCategories } from '../data/mockData';
+import { productAPI, categoryAPI } from '../services/api';
 
-const Home = ({ onViewDetail }) => {
+const Home = React.memo(({ onViewDetail }) => {
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchData = async () => {
+      try {
+        const [productsRes, categoriesRes] = await Promise.all([
+          productAPI.getAll(),
+          categoryAPI.getAll()
+        ]);
+        
+        // Debug logs
+        console.log('Products Response:', productsRes);
+        console.log('Categories Response:', categoriesRes);
+        
+        if (isMounted) {
+          const productsData = productsRes.data || [];
+          const categoriesData = categoriesRes.data || [];
+          
+          console.log('Processed Products:', productsData);
+          console.log('Processed Categories:', categoriesData);
+          
+          setProducts(productsData);
+          setCategories(categoriesData);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        if (isMounted) {
+          setProducts([]);
+          setCategories([]);
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const memoizedProducts = useMemo(() => {
+    console.log('Current products state:', products);
+    return products;
+  }, [products]);
+  
+  const memoizedCategories = useMemo(() => {
+    console.log('Current categories state:', categories);
+    return categories;
+  }, [categories]);
+
+  if (loading) {
+    return <div className="text-center py-10">Đang tải...</div>;
+  }
+
+  // Debug log before rendering
+  console.log('Rendering with products:', memoizedProducts);
+  console.log('Rendering with categories:', memoizedCategories);
+
   return (
     <div className="space-y-8">
       {/* Hero Banner */}
@@ -24,10 +88,10 @@ const Home = ({ onViewDetail }) => {
       <div className="text-center">
         <h2 className="text-3xl font-bold mb-8">Danh mục hoa</h2>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {mockCategories.map((category, index) => (
-            <div key={index} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer">
+          {Array.isArray(memoizedCategories) && memoizedCategories.map(category => (
+            <div key={category._id} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer">
               <div className="text-4xl mb-2">🌸</div>
-              <h3 className="font-semibold">{category}</h3>
+              <h3 className="font-semibold">{category.name}</h3>
             </div>
           ))}
         </div>
@@ -37,9 +101,9 @@ const Home = ({ onViewDetail }) => {
       <div>
         <h2 className="text-3xl font-bold text-center mb-8">Sản phẩm nổi bật</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockProducts.map(product => (
+          {Array.isArray(memoizedProducts) && memoizedProducts.map(product => (
             <ProductCard 
-              key={product.id} 
+              key={product._id} 
               product={product} 
               onViewDetail={onViewDetail}
             />
@@ -48,6 +112,6 @@ const Home = ({ onViewDetail }) => {
       </div>
     </div>
   );
-};
+});
 
 export default Home;
