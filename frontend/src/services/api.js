@@ -37,6 +37,17 @@ export const productAPI = {
   create: (product) => api.post('/products', product),
   update: (id, product) => api.put(`/products/${id}`, product),
   delete: (id) => api.delete(`/products/${id}`),
+  search: (keyword) => api.get(`/products/search?keyword=${keyword}`),
+  getFeatured: () => api.get('/products/featured'),
+  getByCategory: (categoryId) => api.get(`/products/category/${categoryId}`)
+};
+
+export const categoryAPI = {
+  getAll: () => api.get('/categories'),
+  getById: (id) => api.get(`/categories/${id}`),
+  create: (category) => api.post('/categories', category),
+  update: (id, category) => api.put(`/categories/${id}`, category),
+  delete: (id) => api.delete(`/categories/${id}`),
 };
 
 export const orderAPI = {

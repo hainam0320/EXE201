@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
     },
     requestedRole: {
         type: String,
-        enum: ['buyer', 'seller'],
+        enum: ['buyer', 'seller', null],
         default: null
     },
     createdAt: {type: Date, default: Date.now},

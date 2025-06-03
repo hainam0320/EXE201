@@ -1,53 +1,74 @@
 import React from 'react';
-import { ShoppingCart, Star } from 'lucide-react';
-import { useCart } from '../../context/CartContext';
+import { Link } from 'react-router-dom';
+import { ShoppingCart, Eye } from 'lucide-react';
 
-const ProductCard = ({ product, onViewDetail }) => {
-  const { addToCart } = useCart();
+const ProductCard = ({ product, onAddToCart, onViewDetail }) => {
+  if (!product) return null;
 
-  const handleAddToCart = () => {
-    addToCart(product);
-    alert('Đã thêm sản phẩm vào giỏ hàng!');
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    if (onAddToCart) {
+      onAddToCart(product);
+    }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-      <img 
-        src={product.image} 
-        alt={product.name}
-        className="w-full h-48 object-cover cursor-pointer"
-        onClick={() => onViewDetail(product)}
-      />
-      <div className="p-4">
-        <h3 className="font-semibold text-lg mb-2 cursor-pointer hover:text-pink-600" 
-            onClick={() => onViewDetail(product)}>
+    <Link 
+      to={`/product/${product._id}`}
+      className="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
+    >
+      {/* Product Image */}
+      <div className="aspect-w-1 aspect-h-1 w-full">
+        <img
+          src={product.image}
+          alt={product.name}
+          className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
+          onError={(e) => {
+            e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
+          }}
+        />
+      </div>
+
+      {/* Product Info */}
+      <div className="p-4 space-y-2">
+        <h3 className="text-lg font-semibold text-gray-800 line-clamp-2">
           {product.name}
         </h3>
-        <p className="text-gray-600 text-sm mb-2">{product.description}</p>
-        
-        {/* Rating */}
-        <div className="flex items-center mb-2">
-          <Star className="h-4 w-4 text-yellow-400 fill-current" />
-          <span className="text-sm text-gray-600 ml-1">
-            {product.rating} ({product.reviews} đánh giá)
+
+        <div className="flex items-center justify-between">
+          <span className="text-xl font-bold text-pink-600">
+            {product.price?.toLocaleString()}₫
           </span>
+          
+          <div className="flex space-x-2">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                onViewDetail && onViewDetail(product._id);
+              }}
+              className="p-2 text-gray-600 hover:text-pink-600 transition-colors"
+              title="Xem chi tiết"
+            >
+              <Eye className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={handleAddToCart}
+              className="p-2 text-gray-600 hover:text-pink-600 transition-colors"
+              title="Thêm vào giỏ hàng"
+            >
+              <ShoppingCart className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        {/* Price and Add to Cart */}
-        <div className="flex justify-between items-center">
-          <span className="text-xl font-bold text-pink-600">
-            {product.price.toLocaleString('vi-VN')}₫
-          </span>
-          <button 
-            onClick={handleAddToCart}
-            className="bg-pink-600 text-white px-4 py-2 rounded-md hover:bg-pink-700 transition-colors flex items-center space-x-1"
-          >
-            <ShoppingCart className="h-4 w-4" />
-            <span>Thêm</span>
-          </button>
-        </div>
+        {product.category && (
+          <div className="text-sm text-gray-500">
+            {product.category.name}
+          </div>
+        )}
       </div>
-    </div>
+    </Link>
   );
 };
 

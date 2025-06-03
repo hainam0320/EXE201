@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { authAPI } from '../services/api';
+import { useNavigate, Link } from 'react-router-dom';
 
-const Register = ({ setCurrentScreen }) => {
+const Register = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
       userName: '',
       lastName: '',
@@ -39,12 +41,12 @@ const Register = ({ setCurrentScreen }) => {
         if (response.data.needsApproval) {
             // Seller cần chờ duyệt, không auto redirect
             setTimeout(() => {
-                setCurrentScreen('login');
+                navigate('/login');
             }, 4000); // Chờ lâu hơn để user đọc message
         } else {
             // Buyer có thể đăng nhập ngay
             setTimeout(() => {
-                setCurrentScreen('login');
+                navigate('/login');
             }, 2000);
         }
       } catch (error) {
@@ -185,13 +187,17 @@ const Register = ({ setCurrentScreen }) => {
         </form>
         <p className="text-center mt-4 text-sm text-gray-600">
           Đã có tài khoản? 
-          <button 
-            onClick={() => setCurrentScreen('login')}
+          <Link 
+            to="/login"
             className="text-pink-600 hover:underline ml-1"
-            disabled={loading}
+            onClick={(e) => {
+              if (loading) {
+                e.preventDefault();
+              }
+            }}
           >
             Đăng nhập
-          </button>
+          </Link>
         </p>
       </div>
     );
