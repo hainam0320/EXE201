@@ -1,6 +1,7 @@
 import React from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { WishlistProvider } from './context/WishlistContext';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -14,9 +15,11 @@ import Register from './page/Register';
 import ForgotPassword from './page/ForgotPassword';
 import ResetPassword from './page/ResetPassword';
 import ChangePassword from './page/ChangePassword';
+import Profile from './page/Profile';
 import Shop from './page/Shop';
 import ProductDetail from './page/ProductDetail';
 import CartScreen from './components/buyer/Cart';
+import Wishlist from './page/Wishlist';
 import SellerDashboard from './components/seller/SellerDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
 import SellerApproval from './components/admin/SellerApproval';
@@ -52,6 +55,22 @@ function AppContent() {
           <Route path="/product/:id" element={<ProductDetail />} />
           
           {/* Protected Routes */}
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/wishlist" 
+            element={
+              <ProtectedRoute allowedRoles={['buyer']}>
+                <Wishlist />
+              </ProtectedRoute>
+            } 
+          />
           <Route 
             path="/change-password" 
             element={
@@ -107,19 +126,21 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <CartProvider>
-          <ToastContainer
-            position="top-right"
-            autoClose={3000}
-            hideProgressBar={false}
-            newestOnTop={true}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme="light"
-          />
-          <AppContent />
+          <WishlistProvider>
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop={true}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="light"
+            />
+            <AppContent />
+          </WishlistProvider>
         </CartProvider>
       </BrowserRouter>
     </AuthProvider>
