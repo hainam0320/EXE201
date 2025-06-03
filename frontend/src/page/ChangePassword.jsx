@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { authAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
 
-const ChangePassword = ({ setCurrentScreen }) => {
+const ChangePassword = () => {
     const { currentUser } = useAuth();
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         currentPassword: '',
         newPassword: '',
@@ -59,7 +61,7 @@ const ChangePassword = ({ setCurrentScreen }) => {
 
             // Chuyển về profile sau 2 giây
             setTimeout(() => {
-                setCurrentScreen('profile');
+                navigate('/profile');
             }, 2000);
         } catch (error) {
             console.error('Change password error:', error);
@@ -155,22 +157,20 @@ const ChangePassword = ({ setCurrentScreen }) => {
             </form>
 
             <div className="mt-6 text-center space-y-2">
-                <button 
-                    onClick={() => setCurrentScreen('profile')}
+                <Link 
+                    to="/profile"
                     className="text-pink-600 hover:underline text-sm"
-                    disabled={loading}
                 >
                     ← Quay lại hồ sơ cá nhân
-                </button>
+                </Link>
                 <div className="text-sm text-gray-600">
                     Hoặc 
-                    <button 
-                        onClick={() => setCurrentScreen('home')}
+                    <Link 
+                        to="/"
                         className="text-pink-600 hover:underline ml-1"
-                        disabled={loading}
                     >
                         về trang chủ
-                    </button>
+                    </Link>
                 </div>
             </div>
         </div>
