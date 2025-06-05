@@ -6,7 +6,8 @@ const routes = require('./router');
 const connectDB = require('./router/db');
 const multer = require('multer');
 
-dotenv.config();
+require('dotenv').config();
+
 
 const app = express();
 
