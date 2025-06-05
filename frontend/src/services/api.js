@@ -82,7 +82,7 @@ export const cartAPI = {
 
   // Xóa sản phẩm khỏi giỏ hàng
   removeFromCart: (productId) => {
-    return api.delete(`/cart/remove/${productId}`);
+    return api.delete(`/cart/item/${productId}`);
   },
 
   // Xóa sạch giỏ hàng
