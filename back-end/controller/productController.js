@@ -172,23 +172,33 @@ exports.updateProduct = async (req, res) => {
 // Delete product
 exports.deleteProduct = async (req, res) => {
     try {
+        console.log('Attempting to delete product with ID:', req.params.id);
+        
         const product = await Product.findById(req.params.id);
         if (!product) {
+            console.log('Product not found with ID:', req.params.id);
             return res.status(404).json({
                 success: false,
                 error: 'Product not found'
             });
         }
 
-        await product.remove();
+        // Sử dụng findByIdAndDelete thay vì remove()
+        await Product.findByIdAndDelete(req.params.id);
+        
+        console.log('Successfully deleted product with ID:', req.params.id);
+        
         res.status(200).json({
             success: true,
+            message: 'Product deleted successfully',
             data: {}
         });
     } catch (error) {
+        console.error('Error in deleteProduct:', error);
+        console.error('Stack trace:', error.stack);
         res.status(500).json({
             success: false,
-            error: 'Server Error'
+            error: error.message || 'Server Error'
         });
     }
 };
