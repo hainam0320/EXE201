@@ -1,34 +1,50 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Heart } from 'lucide-react';
+import { ShoppingCart, Eye, Heart } from 'lucide-react';
+import { cartAPI } from '../../services/api'; 
 import { useWishlist } from '../../context/WishlistContext';
 import { useAuth } from '../../context/AuthContext';
 
-const ProductCard = ({ product, onAddToCart }) => {
+const ProductCard = ({ product, onAddToCart, onViewDetail }) => {
   const { currentUser } = useAuth();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
-  
+
   if (!product) return null;
 
-  const handleAddToCart = (e) => {
+  const handleAddToCart = async (e) => {
     e.preventDefault();
-    if (onAddToCart) {
-      onAddToCart(product);
+
+    try {
+      const response = await cartAPI.addToCart(product._id, 1);
+      if (response.data.success) {
+        alert('✅ Đã thêm vào giỏ hàng');
+        onAddToCart && onAddToCart(product);
+      } else {
+        alert('❌ Lỗi: ' + (response.data.message || 'Không thể thêm sản phẩm'));
+      }
+    } catch (error) {
+      console.error('Lỗi khi thêm vào giỏ hàng:', error);
+      alert('❌ Đã xảy ra lỗi khi thêm vào giỏ hàng');
     }
   };
 
   const handleToggleWishlist = async (e) => {
     e.preventDefault();
     if (!currentUser) {
-      // Redirect to login or show login modal
+      // Có thể chuyển hướng login hoặc show modal
+      alert('Vui lòng đăng nhập để sử dụng chức năng yêu thích');
       return;
     }
 
     const productId = product._id;
-    if (isInWishlist(productId)) {
-      await removeFromWishlist(productId);
-    } else {
-      await addToWishlist(productId);
+    try {
+      if (isInWishlist(productId)) {
+        await removeFromWishlist(productId);
+      } else {
+        await addToWishlist(productId);
+      }
+    } catch (error) {
+      console.error('Lỗi khi cập nhật yêu thích:', error);
     }
   };
 
@@ -59,8 +75,37 @@ const ProductCard = ({ product, onAddToCart }) => {
           <span className="text-xl font-bold text-pink-600">
             {product.price?.toLocaleString()}₫
           </span>
-          
+
           <div className="flex space-x-2">
+            
+
+            <button
+              onClick={handleAddToCart}
+              className="p-2 text-gray-600 hover:text-pink-600 transition-colors"
+              title="Thêm vào giỏ hàng"
+            >
+              <ShoppingCart className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                onViewDetail && onViewDetail(product._id);
+              }}
+              className="p-2 text-gray-600 hover:text-pink-600 transition-colors"
+              title="Xem chi tiết"
+            >
+              <Eye className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={handleAddToCart}
+              className="p-2 text-gray-600 hover:text-pink-600 transition-colors"
+              title="Thêm vào giỏ hàng"
+            >
+              <ShoppingCart className="w-5 h-5" />
+            </button>
+
             <button
               onClick={handleToggleWishlist}
               className={`p-2 transition-colors ${
@@ -71,14 +116,6 @@ const ProductCard = ({ product, onAddToCart }) => {
               title={isInWishlist(product._id) ? 'Xóa khỏi yêu thích' : 'Thêm vào yêu thích'}
             >
               <Heart className={`w-5 h-5 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
-            </button>
-
-            <button
-              onClick={handleAddToCart}
-              className="p-2 text-gray-600 hover:text-pink-600 transition-colors"
-              title="Thêm vào giỏ hàng"
-            >
-              <ShoppingCart className="w-5 h-5" />
             </button>
           </div>
         </div>

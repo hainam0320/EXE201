@@ -64,5 +64,31 @@ export const wishlistAPI = {
   removeFromWishlist: (productId) => api.delete(`/wishlist/${productId}`),
   checkWishlist: (productId) => api.get(`/wishlist/check/${productId}`)
 };
+export const cartAPI = {
+  // Thêm sản phẩm vào giỏ hàng
+  addToCart: (productId, quantity = 1) => {
+    return api.post('/cart/add', { productId, quantity });
+  },
+
+  // Lấy giỏ hàng hiện tại của user
+  getCart: () => {
+    return api.get('/cart');
+  },
+
+  // Cập nhật số lượng sản phẩm trong giỏ hàng
+  updateCartItem: (productId, quantity) => {
+    return api.put('/cart/update', { productId, quantity });
+  },
+
+  // Xóa sản phẩm khỏi giỏ hàng
+  removeFromCart: (productId) => {
+    return api.delete(`/cart/item/${productId}`);
+  },
+
+  // Xóa sạch giỏ hàng
+  clearCart: () => {
+    return api.delete('/cart/clear');
+  },
+};
 
 export default api;
