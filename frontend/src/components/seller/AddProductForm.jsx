@@ -41,6 +41,11 @@ const AddProductForm = ({ onAdd, onClose }) => {
     setLoading(true);
 
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Vui lòng đăng nhập để thêm sản phẩm');
+      }
+
       const formDataToSend = new FormData();
       formDataToSend.append('name', formData.name);
       formDataToSend.append('price', formData.price);
@@ -50,21 +55,28 @@ const AddProductForm = ({ onAdd, onClose }) => {
         formDataToSend.append('image', formData.image);
       }
 
-      // TODO: Thêm token xác thực vào header
       const response = await fetch(`${API_URL}/products`, {
         method: 'POST',
-        // headers: {
-        //   'Authorization': `Bearer ${token}`
-        // },
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formDataToSend,
       });
 
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+        throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
+      }
+
       if (!response.ok) {
-        throw new Error('Failed to add product');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Có lỗi xảy ra khi thêm sản phẩm');
       }
 
       const result = await response.json();
       if (result.success) {
+        alert('Thêm sản phẩm thành công!');
         onAdd(result.data);
         onClose();
       } else {
@@ -72,7 +84,7 @@ const AddProductForm = ({ onAdd, onClose }) => {
       }
     } catch (error) {
       console.error('Error adding product:', error);
-      alert('Có lỗi xảy ra khi thêm sản phẩm');
+      alert(error.message || 'Có lỗi xảy ra khi thêm sản phẩm');
     } finally {
       setLoading(false);
     }

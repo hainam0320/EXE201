@@ -11,8 +11,8 @@ const {
 
 // All routes are protected (require authentication)
 router.get('/', protect, getCart);
-router.post('/add', protect, addToCart);
-router.put('/update', protect, updateCartItem);
+router.post('/add', protect,  addToCart);
+router.put('/update', protect,  updateCartItem);
 router.delete('/item/:productId', protect, removeFromCart);
 router.delete('/clear', protect, clearCart);
 

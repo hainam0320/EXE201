@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { productAPI } from '../services/api';
-import { ArrowLeft, ShoppingCart } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { productAPI, cartAPI } from '../services/api';
+import { ArrowLeft, ShoppingCart, Heart } from 'lucide-react';
+import { useWishlist } from '../context/WishlistContext';  // Đường dẫn tùy dự án
+import { useAuth } from '../context/AuthContext';
 
 const ProductDetail = ({ onAddToCart }) => {
   const { id } = useParams();
@@ -11,29 +12,21 @@ const ProductDetail = ({ onAddToCart }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const { currentUser } = useAuth();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
   useEffect(() => {
     const fetchProductDetail = async () => {
       try {
-        console.log('Fetching product details for ID:', id);
         setLoading(true);
         const response = await productAPI.getById(id);
-        console.log('Full API Response:', JSON.stringify(response, null, 2));
-        
+
         if (response?.data?.success && response?.data?.data) {
-          const productData = response.data.data;
-          console.log('Product data to be set:', JSON.stringify(productData, null, 2));
-          
-          // Kiểm tra và xử lý URL ảnh
+          let productData = response.data.data;
           let imageUrl = productData.image;
-          console.log('Original image URL:', imageUrl);
-          
-          if (Array.isArray(imageUrl)) {
-            console.log('Image is an array, getting first element');
-            imageUrl = imageUrl[0];
-          }
-          
-          // Kiểm tra URL hợp lệ
+
+          if (Array.isArray(imageUrl)) imageUrl = imageUrl[0];
+
           const isValidUrl = (url) => {
             try {
               new URL(url);
@@ -43,42 +36,67 @@ const ProductDetail = ({ onAddToCart }) => {
             }
           };
 
-          console.log('Checking if URL is valid:', imageUrl);
           if (!imageUrl || !isValidUrl(imageUrl)) {
-            console.log('URL is not valid, using default image');
             imageUrl = 'https://cdn.pixabay.com/photo/2015/04/19/08/32/rose-729509_1280.jpg';
           }
-          
-          const finalProduct = {
-            ...productData,
-            image: imageUrl
-          };
-          console.log('Final product data:', JSON.stringify(finalProduct, null, 2));
-          setProduct(finalProduct);
+
+          setProduct({ ...productData, image: imageUrl });
         } else {
-          console.error('Invalid response structure:', response);
           setError('Dữ liệu sản phẩm không hợp lệ');
         }
       } catch (err) {
-        console.error('Error details:', err);
         setError('Không thể tải thông tin sản phẩm');
       } finally {
         setLoading(false);
       }
     };
 
-    if (id) {
-      fetchProductDetail();
-    } else {
-      console.error('No product ID provided');
+    if (id) fetchProductDetail();
+    else {
       setError('ID sản phẩm không hợp lệ');
       setLoading(false);
     }
   }, [id]);
 
-  const handleAddToCart = () => {
-    if (product && onAddToCart) {
-      onAddToCart(product, quantity);
+  // Thêm vào giỏ hàng: gọi API
+  const handleAddToCart = async () => {
+    if (!currentUser) {
+      alert('Vui lòng đăng nhập để thêm vào giỏ hàng');
+      return;
+    }
+    if (!product) return;
+
+    try {
+      const response = await cartAPI.addToCart(product._id, quantity);
+      if (response.data.success) {
+        alert('✅ Đã thêm vào giỏ hàng');
+        onAddToCart && onAddToCart(product, quantity);
+      } else {
+        alert('❌ Lỗi: ' + (response.data.message || 'Không thể thêm sản phẩm'));
+      }
+    } catch (error) {
+      console.error('Lỗi khi thêm vào giỏ hàng:', error);
+      alert('❌ Đã xảy ra lỗi khi thêm vào giỏ hàng');
+    }
+  };
+
+  // Toggle yêu thích
+  const handleToggleWishlist = async () => {
+    if (!currentUser) {
+      alert('Vui lòng đăng nhập để sử dụng chức năng yêu thích');
+      return;
+    }
+    if (!product) return;
+
+    const productId = product._id;
+    try {
+      if (isInWishlist(productId)) {
+        await removeFromWishlist(productId);
+      } else {
+        await addToWishlist(productId);
+      }
+    } catch (error) {
+      console.error('Lỗi khi cập nhật yêu thích:', error);
     }
   };
 
@@ -106,8 +124,6 @@ const ProductDetail = ({ onAddToCart }) => {
     );
   }
 
-  console.log('Rendering product:', product);
-
   return (
     <div className="container mx-auto px-4 py-8">
       <button
@@ -126,17 +142,9 @@ const ProductDetail = ({ onAddToCart }) => {
             alt={product.name}
             className="w-full h-[500px] object-cover"
             onError={(e) => {
-              console.error('Image failed to load:', product.image);
               e.target.src = 'https://cdn.pixabay.com/photo/2015/04/19/08/32/rose-729509_1280.jpg';
             }}
-            onLoad={() => console.log('Image loaded successfully:', product.image)}
           />
-          {/* Loading overlay */}
-          {loading && (
-            <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-600"></div>
-            </div>
-          )}
         </div>
 
         {/* Product Info */}
@@ -167,6 +175,7 @@ const ProductDetail = ({ onAddToCart }) => {
           </div>
 
           <div className="flex items-center space-x-4">
+            {/* Số lượng */}
             <div className="flex items-center border rounded-md">
               <button
                 className="px-4 py-2 text-gray-600 hover:text-pink-600"
@@ -189,12 +198,28 @@ const ProductDetail = ({ onAddToCart }) => {
               </button>
             </div>
 
+            {/* Thêm vào giỏ hàng */}
             <button
               onClick={handleAddToCart}
               className="flex items-center space-x-2 bg-pink-600 text-white px-6 py-3 rounded-md hover:bg-pink-700 transition-colors"
             >
               <ShoppingCart className="w-5 h-5" />
               <span>Thêm vào giỏ hàng</span>
+            </button>
+
+            {/* Nút yêu thích */}
+            <button
+              onClick={handleToggleWishlist}
+              className={`p-3 rounded-md transition-colors border ${
+                isInWishlist(product._id)
+                  ? 'text-pink-600 border-pink-600'
+                  : 'text-gray-600 border-gray-300 hover:text-pink-600 hover:border-pink-600'
+              }`}
+              title={isInWishlist(product._id) ? 'Xóa khỏi yêu thích' : 'Thêm vào yêu thích'}
+            >
+              <Heart
+                className={`w-6 h-6 ${isInWishlist(product._id) ? 'fill-current' : ''}`}
+              />
             </button>
           </div>
         </div>
@@ -204,4 +229,3 @@ const ProductDetail = ({ onAddToCart }) => {
 };
 
 export default ProductDetail;
-  

@@ -1,6 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
-const NotFoundScreen = ({ setCurrentScreen }) => {
+const NotFoundScreen = () => {
+    const navigate = useNavigate();
+    
     return (
       <div className="text-center py-16">
         <div className="text-6xl mb-4">🌸</div>
@@ -8,7 +11,7 @@ const NotFoundScreen = ({ setCurrentScreen }) => {
         <p className="text-gray-600 mb-8">Trang bạn tìm kiếm không tồn tại.</p>
         <button 
           className="bg-pink-600 text-white px-6 py-3 rounded-md hover:bg-pink-700 transition-colors"
-          onClick={() => setCurrentScreen && setCurrentScreen('home')}
+          onClick={() => navigate('/')}
         >
           Về trang chủ
         </button>

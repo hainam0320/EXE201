@@ -36,7 +36,7 @@ const Footer = () => {
         <div>
           <h3 className="font-semibold mb-3 text-pink-600">Kết nối với chúng tôi</h3>
           <div className="flex space-x-4">
-            <a href="#" className="p-2 rounded-full bg-pink-50 hover:bg-pink-100 transition-colors"><Facebook className="h-5 w-5 text-pink-600" /></a>
+            <a href="https://www.facebook.com/profile.php?id=100090125010846" className="p-2 rounded-full bg-pink-50 hover:bg-pink-100 transition-colors"><Facebook className="h-5 w-5 text-pink-600" /></a>
             <a href="#" className="p-2 rounded-full bg-pink-50 hover:bg-pink-100 transition-colors"><Instagram className="h-5 w-5 text-pink-600" /></a>
           </div>
         </div>

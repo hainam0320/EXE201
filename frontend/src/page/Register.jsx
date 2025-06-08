@@ -187,8 +187,8 @@ const Register = () => {
         </form>
         <p className="text-center mt-4 text-sm text-gray-600">
           Đã có tài khoản? 
-          <Link 
-            to="/login"
+          <button 
+            onClick={() => navigate('/login')}
             className="text-pink-600 hover:underline ml-1"
             onClick={(e) => {
               if (loading) {
@@ -197,7 +197,7 @@ const Register = () => {
             }}
           >
             Đăng nhập
-          </Link>
+          </button>
         </p>
       </div>
     );
