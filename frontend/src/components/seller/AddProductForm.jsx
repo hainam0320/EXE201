@@ -69,12 +69,11 @@ const AddProductForm = ({ onAdd, onClose }) => {
         throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
       }
 
+      const result = await response.json();
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Có lỗi xảy ra khi thêm sản phẩm');
+        throw new Error(result.error || result.message || 'Có lỗi xảy ra khi thêm sản phẩm');
       }
 
-      const result = await response.json();
       if (result.success) {
         alert('Thêm sản phẩm thành công!');
         onAdd(result.data);

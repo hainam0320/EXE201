@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BarChart3, Package, ShoppingCart, Plus, Edit, Trash2 } from 'lucide-react';
 import ProductManagement from './ProductManagement';
 import OrderManagement from './OrderManagement';
+import shopService from '../../services/shopService';
 
 const API_URL = 'http://localhost:9999/api';
 
@@ -13,6 +15,10 @@ const SellerDashboard = () => {
       totalProducts: 0,
     });
     const [loading, setLoading] = useState(true);
+    const [checkingShop, setCheckingShop] = useState(true);
+    const [hasShop, setHasShop] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
+    const navigate = useNavigate();
   
     const tabs = [
       { id: 'overview', label: 'Tổng quan', icon: BarChart3 },
@@ -20,19 +26,48 @@ const SellerDashboard = () => {
       { id: 'orders', label: 'Đơn hàng', icon: ShoppingCart },
     ];
   
+    // Kiểm tra shop khi vào dashboard
     useEffect(() => {
-      if (activeTab === 'overview') {
+      const checkShop = async () => {
+        try {
+          await shopService.getMyShop();
+          setHasShop(true);
+        } catch (err) {
+          // Lấy status code từ nhiều nguồn khác nhau
+          const status = err?.status || err?.response?.status || err?.statusCode;
+          // Chỉ chuyển về login khi 401 (Unauthorized)
+          if (status === 401 || (err.error && err.error.toLowerCase().includes('not authorized'))) {
+            window.location.href = '/login';
+          }
+          // Nếu lỗi là 404 (chưa có shop), chỉ hiện nút tạo shop, không logout
+          else if (status === 404 || (err.error && (err.error.includes('chưa có cửa hàng') || err.error.includes('Bạn chưa có cửa hàng')))) {
+            setHasShop(false);
+          } else {
+            // Các lỗi khác, hiển thị thông báo lỗi
+            setErrorMsg('Có lỗi xảy ra: ' + (err.error || 'Không xác định'));
+          }
+        } finally {
+          setCheckingShop(false);
+        }
+      };
+      checkShop();
+    }, []);
+  
+    useEffect(() => {
+      if (activeTab === 'overview' && hasShop) {
         fetchDashboardStats();
       }
-    }, [activeTab]);
+    }, [activeTab, hasShop]);
   
     const fetchDashboardStats = async () => {
       try {
         // Fetch products count
-        const productsResponse = await fetch(`${API_URL}/products`);
+        const productsResponse = await fetch(`${API_URL}/products/my`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
         const productsData = await productsResponse.json();
         
-        // Fetch orders (you'll need to implement this API)
+        // Fetch orders (bạn cần sửa lại API cho đúng shop)
         const ordersResponse = await fetch(`${API_URL}/orders`);
         const ordersData = await ordersResponse.json();
 
@@ -42,7 +77,7 @@ const SellerDashboard = () => {
         setDashboardStats({
           totalRevenue: totalRevenue,
           totalOrders: ordersData.data ? ordersData.data.length : 0,
-          totalProducts: productsData.count || 0,
+          totalProducts: productsData.data ? productsData.data.length : 0,
         });
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
@@ -50,6 +85,24 @@ const SellerDashboard = () => {
         setLoading(false);
       }
     };
+  
+    if (checkingShop) return <div>Đang kiểm tra cửa hàng...</div>;
+    if (errorMsg) {
+      return <div className="text-center py-8 text-red-600">{errorMsg}</div>;
+    }
+    if (!hasShop) {
+      return (
+        <div className="text-center py-8">
+          <p>Bạn chưa có cửa hàng. Hãy tạo cửa hàng để bắt đầu kinh doanh!</p>
+          <button
+            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded"
+            onClick={() => navigate('/seller/shop/create')}
+          >
+            Tạo cửa hàng
+          </button>
+        </div>
+      );
+    }
   
     const renderTabContent = () => {
       switch (activeTab) {

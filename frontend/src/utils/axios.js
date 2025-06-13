@@ -1,37 +1,42 @@
+// utils/axios.js
 import axios from 'axios';
 
+// Tạo một instance của Axios
 const instance = axios.create({
-  baseURL: 'http://localhost:5000', // Thay đổi port nếu backend của bạn chạy ở port khác
+  baseURL: 'http://localhost:9999', // ⚠️ Thay đổi nếu backend chạy port khác
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   }
 });
 
-// Add a request interceptor
+// ✅ Interceptor request: Tự động thêm token nếu có
 instance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.error('Lỗi khi thêm token vào header:', error);
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Add a response interceptor
+// ✅ Interceptor response: Tự động xử lý lỗi 401
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      console.warn('Token hết hạn hoặc không hợp lệ. Đang đăng xuất...');
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      window.location.href = '/login'; // ⚠️ Điều hướng về trang login
     }
     return Promise.reject(error);
   }
 );
 
-export default instance; 
+export default instance;

@@ -11,20 +11,22 @@ const {
     searchProducts,
     getFeaturedProducts,
     getProductsByCategory,
-    updateAllProductImages
+    updateAllProductImages,
+    getMyProducts
 } = require('../controller/productController');
 
 // Public routes
-router.get('/', getAllProducts);
+router.get('/my', protect, authorize('seller'), getMyProducts);
 router.get('/featured', getFeaturedProducts);
 router.get('/category/:categoryId', getProductsByCategory);
 router.get('/search', searchProducts);
+router.get('/', getAllProducts);
 router.get('/:id', getProduct);
 
-// Temporarily remove authentication for testing
-router.post('/', upload.single('image'), createProduct);
+// Seller routes
+router.post('/', protect, authorize('seller'), upload.single('image'), createProduct);
 router.put('/:id', upload.single('image'), updateProduct);
-router.delete('/:id', deleteProduct);
+router.delete('/:id', protect, authorize('seller'), deleteProduct);
 router.post('/update-images', updateAllProductImages);
 
 module.exports = router; 

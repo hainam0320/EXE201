@@ -1,13 +1,15 @@
 const Product = require('../model/productModel');
+const Shop = require('../model/shopModel');
 const { validationResult } = require('express-validator');
 
-// Get all products
+// Get all products (public, không phân biệt shop)
 exports.getAllProducts = async (req, res) => {
     try {
         console.log('Fetching all products...');
         
         const products = await Product.find()
             .populate('category', 'name')
+            .populate('shop', 'name')
             .sort({ createdAt: -1 })
             .lean();
 
@@ -57,7 +59,9 @@ exports.getAllProducts = async (req, res) => {
 // Get single product
 exports.getProduct = async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id).populate('category', 'name');
+        const product = await Product.findById(req.params.id)
+            .populate('category', 'name')
+            .populate('shop', 'name');
         if (!product) {
             return res.status(404).json({
                 success: false,
@@ -91,39 +95,43 @@ exports.getProduct = async (req, res) => {
     }
 };
 
-// Create new product
+// Get products of current seller's shop
+exports.getMyProducts = async (req, res) => {
+    try {
+        const shop = await Shop.findOne({ owner: req.user._id });
+        if (!shop) {
+            // Nếu seller chưa có shop, trả về mảng rỗng (không lỗi)
+            return res.status(200).json({ success: true, data: [] });
+        }
+        const products = await Product.find({ shop: shop._id }).populate('category', 'name');
+        res.status(200).json({ success: true, data: products });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message || 'Server Error' });
+    }
+};
+
+// Create new product (seller only)
 exports.createProduct = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return res.status(400).json({
-            success: false,
-            errors: errors.array()
-        });
+        return res.status(400).json({ success: false, errors: errors.array() });
     }
-
     try {
-        // Xử lý file ảnh nếu có
+        const shop = await Shop.findOne({ owner: req.user._id });
+        if (!shop) return res.status(400).json({ success: false, error: 'Bạn chưa có cửa hàng' });
         let imageUrl = null;
         if (req.file) {
             imageUrl = `${process.env.BASE_URL}/uploads/${req.file.filename}`;
         }
-
         const productData = {
             ...req.body,
-            image: imageUrl || req.body.image // Sử dụng URL từ file upload hoặc từ body
+            image: imageUrl || req.body.image,
+            shop: shop._id
         };
-
         const product = await Product.create(productData);
-        res.status(201).json({
-            success: true,
-            data: product
-        });
+        res.status(201).json({ success: true, data: product });
     } catch (error) {
-        console.error('Error creating product:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Server Error'
-        });
+        res.status(500).json({ success: false, error: 'Server Error' });
     }
 };
 
@@ -169,37 +177,17 @@ exports.updateProduct = async (req, res) => {
     }
 };
 
-// Delete product
+// Delete product (seller only, chỉ xóa sản phẩm thuộc shop của mình)
 exports.deleteProduct = async (req, res) => {
     try {
-        console.log('Attempting to delete product with ID:', req.params.id);
-        
-        const product = await Product.findById(req.params.id);
-        if (!product) {
-            console.log('Product not found with ID:', req.params.id);
-            return res.status(404).json({
-                success: false,
-                error: 'Product not found'
-            });
-        }
-
-        // Sử dụng findByIdAndDelete thay vì remove()
-        await Product.findByIdAndDelete(req.params.id);
-        
-        console.log('Successfully deleted product with ID:', req.params.id);
-        
-        res.status(200).json({
-            success: true,
-            message: 'Product deleted successfully',
-            data: {}
-        });
+        const shop = await Shop.findOne({ owner: req.user._id });
+        if (!shop) return res.status(403).json({ success: false, error: 'Bạn chưa có cửa hàng' });
+        const product = await Product.findOne({ _id: req.params.id, shop: shop._id });
+        if (!product) return res.status(404).json({ success: false, error: 'Không tìm thấy sản phẩm hoặc bạn không có quyền xóa' });
+        await product.deleteOne();
+        res.json({ success: true, message: 'Đã xóa sản phẩm' });
     } catch (error) {
-        console.error('Error in deleteProduct:', error);
-        console.error('Stack trace:', error.stack);
-        res.status(500).json({
-            success: false,
-            error: error.message || 'Server Error'
-        });
+        res.status(500).json({ success: false, error: error.message || 'Server Error' });
     }
 };
 
@@ -342,4 +330,20 @@ exports.updateAllProductImages = async (req, res) => {
             error: 'Server Error'
         });
     }
-}; 
+};
+
+// Get products by shopId (public, buyer xem sản phẩm của từng shop)
+exports.getProductsByShop = async (req, res) => {
+    try {
+        const shopId = req.params.id; // Sửa lại đúng tên param
+        if (!shopId) {
+            return res.status(400).json({ success: false, error: 'Thiếu shopId' });
+        }
+        const products = await Product.find({ shop: shopId })
+            .populate('category', 'name')
+            .populate('shop', 'name');
+        res.status(200).json({ success: true, data: products });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message || 'Server Error' });
+    }
+};
