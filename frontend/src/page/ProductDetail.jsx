@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { productAPI, cartAPI } from '../services/api';
 import { ArrowLeft, ShoppingCart, Heart } from 'lucide-react';
 import { useWishlist } from '../context/WishlistContext';  // Đường dẫn tùy dự án
@@ -171,6 +171,17 @@ const ProductDetail = ({ onAddToCart }) => {
                 <span className="text-gray-600">Tình trạng:</span>
                 <span>{product.status ? 'Còn hàng' : 'Hết hàng'}</span>
               </div>
+              {/* Hiển thị tên shop */}
+              {product.shop && (
+                <div className="flex flex-col space-y-2">
+                  <span className="text-gray-600">Shop:</span>
+                  <span>
+                    <Link to={`/shops/${product.shop._id}`} className="text-blue-600 font-medium hover:underline">
+                      {product.shop.name}
+                    </Link>
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

@@ -71,6 +71,13 @@ const ProductCard = ({ product, onAddToCart, onViewDetail }) => {
           {product.name}
         </h3>
 
+        {/* Hiển thị tên shop */}
+        {product.shop && (
+          <div className="text-sm text-blue-600 font-medium">
+            Shop: <Link to={`/shops/${product.shop._id}`}>{product.shop.name}</Link>
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <span className="text-xl font-bold text-pink-600">
             {product.price?.toLocaleString()}₫

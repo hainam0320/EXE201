@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../utils/axios';
 
 const API_URL = 'http://localhost:9999/api';
 

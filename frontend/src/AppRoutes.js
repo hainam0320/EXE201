@@ -22,6 +22,10 @@ import Wishlist from './page/Wishlist';
 import Profile from './page/Profile';
 import BlogList from './page/BlogList';
 import BlogDetail from './page/BlogDetail';
+import ShopList from './components/shop/ShopList';
+import ShopDetail from './components/shop/ShopDetail';
+import ShopForm from './components/shop/ShopForm';
+import PrivateRoute from './components/common/PrivateRoute';
 
 
 // Protected Route Component
@@ -115,6 +119,28 @@ function AppRoutes() {
           />
           
           <Route path="*" element={<NotFoundScreen />} />
+
+          {/* Public Routes */}
+          <Route path="/shops" element={<ShopList />} />
+          <Route path="/shops/:id" element={<ShopDetail />} />
+
+          {/* Protected Routes */}
+          <Route
+            path="/seller/shop/create"
+            element={
+              <PrivateRoute roles={['seller']}>
+                <ShopForm mode="create" />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/seller/shop/edit"
+            element={
+              <PrivateRoute roles={['seller']}>
+                <ShopForm mode="edit" />
+              </PrivateRoute>
+            }
+          />
         </Routes>
       </main>
       <Footer />

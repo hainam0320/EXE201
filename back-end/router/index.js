@@ -10,6 +10,7 @@ const cartRoutes = require('./cartRoutes');
 const blogRoutes = require('./blogRoutes');
 const wishlistRoutes = require('./wishlistRoutes');
 const uploadRoutes = require('./uploadRoutes');
+const shopRoutes = require('./shopRoutes');
 
 // Mount routes
 router.use('/api/auth', authRoutes);
@@ -20,5 +21,6 @@ router.use('/api/cart', cartRoutes);
 router.use('/api/wishlist', wishlistRoutes);
 router.use('/api/blogs', blogRoutes);
 router.use('/api/upload', uploadRoutes);
+router.use('/api/shops', shopRoutes);
 
 module.exports = router; 

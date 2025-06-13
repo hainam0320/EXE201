@@ -26,31 +26,22 @@ const ProductManagement = () => {
   const fetchProducts = async () => {
     try {
       const token = checkAndGetToken();
-      console.log('Fetching products with token:', token);
-
-      const response = await fetch(`${API_URL}/products`, {
+      const response = await fetch(`${API_URL}/products/my`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
       });
-      
-      console.log('Fetch products response status:', response.status);
-
       if (response.status === 401) {
         localStorage.removeItem('token');
-        window.location.href = '/login'; // Chuyển hướng về trang đăng nhập
+        window.location.href = '/login';
         throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
       }
-
       if (!response.ok) {
         throw new Error('Failed to fetch products');
       }
-
       const result = await response.json();
-      console.log('Fetch products result:', result);
-
       if (result.success) {
         setProducts(result.data);
       } else {
@@ -66,7 +57,6 @@ const ProductManagement = () => {
 
   const handleAddProduct = async (newProduct) => {
     setProducts(prevProducts => [...prevProducts, newProduct]);
-    
     await fetchProducts();
   };
 
@@ -80,12 +70,8 @@ const ProductManagement = () => {
 
   const handleDeleteProduct = async (productId) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return;
-
     try {
       const token = checkAndGetToken();
-      console.log('Deleting product with token:', token);
-      console.log('Product ID to delete:', productId);
-
       const response = await fetch(`${API_URL}/products/${productId}`, {
         method: 'DELETE',
         headers: {
@@ -93,40 +79,27 @@ const ProductManagement = () => {
           'Authorization': `Bearer ${token}`
         },
       });
-
-      console.log('Delete product response status:', response.status);
-
       if (response.status === 401) {
         localStorage.removeItem('token');
-        window.location.href = '/login'; // Chuyển hướng về trang đăng nhập
+        window.location.href = '/login';
         throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại');
       }
-
       if (response.status === 403) {
         throw new Error('Bạn không có quyền xóa sản phẩm này');
       }
-
       if (response.status === 404) {
         throw new Error('Không tìm thấy sản phẩm này');
       }
-
-      // Thử đọc response body cho cả trường hợp thành công và thất bại
       const responseText = await response.text();
-      console.log('Delete product response text:', responseText);
-
       let result;
       try {
         result = JSON.parse(responseText);
-        console.log('Delete product parsed result:', result);
       } catch (e) {
-        console.error('Error parsing response:', e);
         throw new Error('Có lỗi xảy ra khi xử lý phản hồi từ server');
       }
-
       if (!response.ok) {
         throw new Error(result.message || 'Có lỗi xảy ra khi xóa sản phẩm');
       }
-
       if (result.success) {
         setProducts(products.filter(product => product._id !== productId));
         alert('Xóa sản phẩm thành công');
