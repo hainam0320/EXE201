@@ -26,6 +26,9 @@ import ShopList from './components/shop/ShopList';
 import ShopDetail from './components/shop/ShopDetail';
 import ShopForm from './components/shop/ShopForm';
 import PrivateRoute from './components/common/PrivateRoute';
+import Checkout from './components/buyer/Checkout';
+import OrderHistory from './components/buyer/OrderHistory';
+import CheckoutSuccess from './components/buyer/CheckoutSuccess';
 
 
 // Protected Route Component
@@ -139,6 +142,30 @@ function AppRoutes() {
               <PrivateRoute roles={['seller']}>
                 <ShopForm mode="edit" />
               </PrivateRoute>
+            }
+          />
+          <Route 
+            path="/checkout" 
+            element={
+              <ProtectedRoute allowedRoles={['buyer']}>
+                <Checkout />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/order-history" 
+            element={
+              <ProtectedRoute allowedRoles={['buyer']}>
+                <OrderHistory />
+              </ProtectedRoute>
+            } 
+          />
+          <Route
+            path="/checkout/success"
+            element={
+              <ProtectedRoute allowedRoles={['buyer']}>
+                <CheckoutSuccess />
+              </ProtectedRoute>
             }
           />
         </Routes>

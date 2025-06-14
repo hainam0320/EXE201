@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { ShoppingCart, Trash2 } from 'lucide-react';
 import { cartAPI } from '../../services/api'; // ✅ Dùng đúng cartAPI
+import { useNavigate } from 'react-router-dom';
 
 const CartScreen = () => {
   const [cartItems, setCartItems] = useState([]);
   const [total, setTotal] = useState(0);
+  const navigate = useNavigate();
 
   const fetchCart = async () => {
     try {
@@ -103,7 +105,10 @@ const CartScreen = () => {
                 {total.toLocaleString('vi-VN')}₫
               </span>
             </div>
-            <button className="w-full mt-4 bg-pink-600 text-white py-3 rounded-md hover:bg-pink-700 transition-colors">
+            <button
+              className="w-full mt-4 bg-pink-600 text-white py-3 rounded-md hover:bg-pink-700 transition-colors"
+              onClick={() => navigate('/checkout')}
+            >
               Thanh toán
             </button>
           </div>

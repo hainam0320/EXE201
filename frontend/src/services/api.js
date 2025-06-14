@@ -54,6 +54,9 @@ export const categoryAPI = {
 
 export const orderAPI = {
   create: (order) => api.post('/orders', order),
+  getMyOrders: () => api.get('/orders/my-orders'),
+  getSellerOrders: () => api.get('/orders/seller-orders'),
+  markPaid: (id) => api.post(`/orders/${id}/paid`),
   getByUser: (userId) => api.get(`/orders/user/${userId}`),
   updateStatus: (id, status) => api.patch(`/orders/${id}/status`, { status }),
 };
