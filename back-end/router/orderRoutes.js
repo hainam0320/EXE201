@@ -15,5 +15,6 @@ router.get('/seller-orders', protect, authorize('seller'), orderController.getSe
 router.get('/', protect, authorize('admin'), orderController.getAllOrders);
 router.get('/:id', protect, orderController.getOrder);
 router.put('/:id/status', protect, authorize('admin'), orderController.updateOrderStatus);
+router.put('/:id/payment-status', protect, authorize('admin'), orderController.updatePaymentStatus);
 
 module.exports = router; 

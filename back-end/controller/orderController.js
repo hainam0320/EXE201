@@ -8,8 +8,9 @@ const { validationResult } = require('express-validator');
 exports.getAllOrders = async (req, res) => {
     try {
         const orders = await Order.find()
-            .populate('user', 'name email')
+            .populate('buyer', 'name email')
             .populate('items.product', 'name price')
+            .populate('items.shop', 'name')
             .sort({ createdAt: -1 });
 
         res.status(200).json({
@@ -18,6 +19,7 @@ exports.getAllOrders = async (req, res) => {
             data: orders
         });
     } catch (error) {
+        console.error('Error in getAllOrders:', error);
         res.status(500).json({
             success: false,
             error: 'Server Error'
@@ -217,5 +219,20 @@ exports.markOrderPaid = async (req, res) => {
         res.status(200).json({ success: true, data: order });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+// Update payment status (Admin)
+exports.updatePaymentStatus = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+        if (!order) {
+            return res.status(404).json({ success: false, error: 'Order not found' });
+        }
+        order.paymentStatus = req.body.paymentStatus;
+        await order.save();
+        res.status(200).json({ success: true, data: order });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Server Error' });
     }
 }; 

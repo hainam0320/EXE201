@@ -75,16 +75,25 @@ const SellerDashboard = () => {
         });
         const productsData = await productsResponse.json();
         
-        // Fetch orders (bạn cần sửa lại API cho đúng shop)
-        const ordersResponse = await fetch(`${API_URL}/orders`);
-        const ordersData = await ordersResponse.json();
+        // Fetch orders for the seller
+        const ordersResponse = await orderAPI.getSellerOrders();
+        const ordersData = ordersResponse.data.data || [];
 
-        // Calculate total revenue from orders
-        const totalRevenue = ordersData.data ? ordersData.data.reduce((sum, order) => sum + (order.totalAmount || 0), 0) : 0;
+        // Calculate total revenue and orders based on shop's products only
+        const shopStats = ordersData.reduce((stats, order) => {
+          // Calculate total for shop's products in this order
+          const shopOrderTotal = order.items.reduce((sum, item) => sum + item.totalPrice, 0);
+          
+          return {
+            // Only add to totalRevenue if order is paid
+            totalRevenue: stats.totalRevenue + (order.paymentStatus === 'paid' ? shopOrderTotal : 0),
+            totalOrders: stats.totalOrders + 1
+          };
+        }, { totalRevenue: 0, totalOrders: 0 });
 
         setDashboardStats({
-          totalRevenue: totalRevenue,
-          totalOrders: ordersData.data ? ordersData.data.length : 0,
+          totalRevenue: shopStats.totalRevenue,
+          totalOrders: shopStats.totalOrders,
           totalProducts: productsData.data ? productsData.data.length : 0,
         });
       } catch (error) {

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BarChart3, Users, Package, ShoppingCart, Clock, CheckCircle, XCircle, BookOpen } from 'lucide-react';
 import { authAPI } from '../../services/api';
 import BlogManagement from './BlogManagement';
+import OrderManagement from './OrderManagement';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -496,16 +497,7 @@ const AdminDashboard = () => {
             )}
 
             {activeTab === 'orders' && (
-              <div>
-                <h2 className="text-xl font-semibold mb-6">Quản lý đơn hàng</h2>
-                <div className="bg-gray-50 p-6 rounded-lg text-center">
-                  <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-2">Chức năng quản lý đơn hàng sẽ được phát triển.</p>
-                  <p className="text-sm text-gray-500">
-                    Hiện tại có {statsLoading ? '...' : dashboardStats.totalOrders} đơn hàng trong hệ thống
-                  </p>
-                </div>
-              </div>
+              <OrderManagement />
             )}
 
             {activeTab === 'blogs' && (

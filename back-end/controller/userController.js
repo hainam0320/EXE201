@@ -2,6 +2,8 @@ const User = require('../model/userModel');
 const jwt = require('jsonwebtoken');
 const { hashPassword, comparePassword, generateToken } = require('../utils/authHelper');
 const nodemailer = require('nodemailer');
+const Order = require('../model/orderModel');
+const Product = require('../model/productModel');
 
 exports.userRegister = async (req, res) => {
   try {
@@ -540,6 +542,15 @@ exports.getDashboardStats = async (req, res) => {
       createdAt: { $gte: today, $lt: tomorrow }
     });
 
+    // Thống kê đơn hàng và doanh thu
+    const allOrders = await Order.find();
+    const paidOrders = allOrders.filter(order => order.paymentStatus === 'paid');
+    const totalOrders = allOrders.length;
+    const totalRevenue = paidOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+
+    // Thống kê sản phẩm
+    const totalProducts = await Product.countDocuments();
+
     res.json({
       success: true,
       data: {
@@ -555,10 +566,9 @@ exports.getDashboardStats = async (req, res) => {
         pendingSellers,
         newUsersLast30Days,
         newUsersToday,
-        // Mock data cho orders và products (sẽ thay thế khi có model tương ứng)
-        totalOrders: 0,
-        totalProducts: 0,
-        totalRevenue: 0
+        totalOrders,
+        totalProducts,
+        totalRevenue
       }
     });
   } catch (error) {
