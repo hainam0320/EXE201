@@ -41,7 +41,11 @@ export const productAPI = {
   delete: (id) => api.delete(`/products/${id}`),
   search: (keyword) => api.get(`/products/search?keyword=${keyword}`),
   getFeatured: () => api.get('/products/featured'),
-  getByCategory: (categoryId) => api.get(`/products/category/${categoryId}`)
+  getByCategory: (categoryId) => api.get(`/products/category/${categoryId}`),
+  getByCategories: (categoryIds) => {
+    const query = categoryIds.join(',');
+    return api.get(`/products/categories?categories=${query}`);
+  },
 };
 
 export const categoryAPI = {
