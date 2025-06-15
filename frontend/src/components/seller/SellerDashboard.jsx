@@ -4,6 +4,7 @@ import { BarChart3, Package, ShoppingCart, Plus, Edit, Trash2 } from 'lucide-rea
 import ProductManagement from './ProductManagement';
 import OrderManagement from './OrderManagement';
 import shopService from '../../services/shopService';
+import { orderAPI } from '../../services/api';
 
 const API_URL = 'http://localhost:9999/api';
 
@@ -19,6 +20,7 @@ const SellerDashboard = () => {
     const [hasShop, setHasShop] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
     const navigate = useNavigate();
+    const [orders, setOrders] = useState([]);
   
     const tabs = [
       { id: 'overview', label: 'Tổng quan', icon: BarChart3 },
@@ -59,6 +61,12 @@ const SellerDashboard = () => {
       }
     }, [activeTab, hasShop]);
   
+    useEffect(() => {
+      if (activeTab === 'orders' && hasShop) {
+        fetchOrders();
+      }
+    }, [activeTab, hasShop]);
+  
     const fetchDashboardStats = async () => {
       try {
         // Fetch products count
@@ -67,22 +75,42 @@ const SellerDashboard = () => {
         });
         const productsData = await productsResponse.json();
         
-        // Fetch orders (bạn cần sửa lại API cho đúng shop)
-        const ordersResponse = await fetch(`${API_URL}/orders`);
-        const ordersData = await ordersResponse.json();
+        // Fetch orders for the seller
+        const ordersResponse = await orderAPI.getSellerOrders();
+        const ordersData = ordersResponse.data.data || [];
 
-        // Calculate total revenue from orders
-        const totalRevenue = ordersData.data ? ordersData.data.reduce((sum, order) => sum + (order.totalAmount || 0), 0) : 0;
+        // Calculate total revenue and orders based on shop's products only
+        const shopStats = ordersData.reduce((stats, order) => {
+          // Calculate total for shop's products in this order
+          const shopOrderTotal = order.items.reduce((sum, item) => sum + item.totalPrice, 0);
+          
+          return {
+            // Only add to totalRevenue if order is paid
+            totalRevenue: stats.totalRevenue + (order.paymentStatus === 'paid' ? shopOrderTotal : 0),
+            totalOrders: stats.totalOrders + 1
+          };
+        }, { totalRevenue: 0, totalOrders: 0 });
 
         setDashboardStats({
-          totalRevenue: totalRevenue,
-          totalOrders: ordersData.data ? ordersData.data.length : 0,
+          totalRevenue: shopStats.totalRevenue,
+          totalOrders: shopStats.totalOrders,
           totalProducts: productsData.data ? productsData.data.length : 0,
         });
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
       } finally {
         setLoading(false);
+      }
+    };
+  
+    const fetchOrders = async () => {
+      try {
+        const res = await orderAPI.getSellerOrders();
+        if (res.data.success) {
+          setOrders(res.data.data);
+        }
+      } catch (err) {
+        setOrders([]);
       }
     };
   
@@ -128,7 +156,48 @@ const SellerDashboard = () => {
         case 'products':
           return <ProductManagement onProductsChange={fetchDashboardStats} />;
         case 'orders':
-          return <OrderManagement onOrdersChange={fetchDashboardStats} />;
+          return (
+            <div>
+              <h2 className="text-xl font-semibold mb-6">Đơn hàng của shop</h2>
+              {orders.length === 0 ? (
+                <div className="text-gray-500">Chưa có đơn hàng nào cho shop của bạn.</div>
+              ) : (
+                <div className="space-y-6">
+                  {orders.map(order => (
+                    <div key={order._id} className="bg-white p-4 rounded-lg shadow-md">
+                      <div className="flex justify-between items-center mb-2">
+                        <div>
+                          <span className="font-semibold">Mã đơn hàng:</span> {order._id}
+                        </div>
+                        <div>
+                          <span className="font-semibold">Trạng thái:</span> <span className="text-pink-600">{order.status}</span>
+                        </div>
+                      </div>
+                      <div className="mb-2">
+                        <span className="font-semibold">Thanh toán:</span> {order.paymentStatus === 'paid' ? <span className="text-green-600">Đã thanh toán</span> : <span className="text-yellow-600">Chưa thanh toán</span>}
+                      </div>
+                      <div className="mb-2">
+                        <span className="font-semibold">Sản phẩm của shop bạn:</span>
+                        <ul className="list-disc ml-6">
+                          {order.items.map(item => (
+                            <li key={item.product?._id || item.name} className="flex items-center space-x-2 mb-1">
+                              {item.product?.image && (
+                                <img src={item.product.image} alt={item.name} className="w-10 h-10 object-cover rounded border" />
+                              )}
+                              <span>{item.name} x {item.quantity} ({item.totalPrice.toLocaleString('vi-VN')}₫)</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="mb-2">
+                        <span className="font-semibold">Tổng tiền các sản phẩm shop bạn:</span> <span className="text-pink-600">{order.items.reduce((sum, item) => sum + item.totalPrice, 0).toLocaleString('vi-VN')}₫</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
         default:
           return null;
       }

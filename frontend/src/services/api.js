@@ -58,8 +58,13 @@ export const categoryAPI = {
 
 export const orderAPI = {
   create: (order) => api.post('/orders', order),
+  getMyOrders: () => api.get('/orders/my-orders'),
+  getSellerOrders: () => api.get('/orders/seller-orders'),
+  getAllOrders: () => api.get('/orders'),
+  markPaid: (id) => api.post(`/orders/${id}/paid`),
   getByUser: (userId) => api.get(`/orders/user/${userId}`),
-  updateStatus: (id, status) => api.patch(`/orders/${id}/status`, { status }),
+  updateStatus: (id, status) => api.put(`/orders/${id}/status`, { status }),
+  updatePaymentStatus: (id, paymentStatus) => api.put(`/orders/${id}/payment-status`, { paymentStatus }),
 };
 
 export const wishlistAPI = {
