@@ -4,6 +4,7 @@ const { hashPassword, comparePassword, generateToken } = require('../utils/authH
 const nodemailer = require('nodemailer');
 const Order = require('../model/orderModel');
 const Product = require('../model/productModel');
+const multer = require('multer');
 
 exports.userRegister = async (req, res) => {
   try {

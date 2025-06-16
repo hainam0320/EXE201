@@ -86,24 +86,6 @@ const ProductCard = ({ product, onAddToCart, onViewDetail }) => {
           <div className="flex space-x-2">
             
 
-            <button
-              onClick={handleAddToCart}
-              className="p-2 text-gray-600 hover:text-pink-600 transition-colors"
-              title="Thêm vào giỏ hàng"
-            >
-              <ShoppingCart className="w-5 h-5" />
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                onViewDetail && onViewDetail(product._id);
-              }}
-              className="p-2 text-gray-600 hover:text-pink-600 transition-colors"
-              title="Xem chi tiết"
-            >
-              <Eye className="w-5 h-5" />
-            </button>
 
             <button
               onClick={handleAddToCart}
