@@ -12,13 +12,15 @@ const {
     getFeaturedProducts,
     getProductsByCategory,
     updateAllProductImages,
-    getMyProducts
+    getMyProducts,
+    getProductsByCategories
 } = require('../controller/productController');
 
 // Public routes
 router.get('/my', protect, authorize('seller'), getMyProducts);
 router.get('/featured', getFeaturedProducts);
 router.get('/category/:categoryId', getProductsByCategory);
+router.get('/categories', getProductsByCategories);
 router.get('/search', searchProducts);
 router.get('/', getAllProducts);
 router.get('/:id', getProduct);

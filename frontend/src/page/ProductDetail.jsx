@@ -164,9 +164,18 @@ const ProductDetail = ({ onAddToCart }) => {
             <h3 className="text-lg font-semibold">Thông tin chi tiết</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex flex-col space-y-2">
-                <span className="text-gray-600">Danh mục:</span>
-                <span>{product.category?.name || 'Chưa phân loại'}</span>
-              </div>
+  <span className="text-gray-600">Danh mục:</span>
+  <span>
+    {Array.isArray(product.category) && product.category.length > 0
+      ? product.category.map((cat, index) => (
+          <span key={cat._id || index}>
+            {cat.name}
+            {index < product.category.length - 1 && ', '}
+          </span>
+        ))
+      : 'Chưa phân loại'}
+  </span>
+</div>
               <div className="flex flex-col space-y-2">
                 <span className="text-gray-600">Tình trạng:</span>
                 <span>{product.status ? 'Còn hàng' : 'Hết hàng'}</span>
