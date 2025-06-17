@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const API_URL = 'http://localhost:9999/api';
+const API_URL = 'http://103.90.224.148:9999/api';
 
 const EditProductForm = ({ product, onEdit, onClose }) => {
   const [formData, setFormData] = useState({

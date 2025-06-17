@@ -13,7 +13,7 @@ const sampleImages = [
 async function updateProductImages() {
     try {
         // Kết nối database
-        await mongoose.connect('mongodb://localhost:27017/EXE2', {
+        await mongoose.connect('mongodb://103.90.224.148:27017/EXE2', {
             useNewUrlParser: true,
             useUnifiedTopology: true
         });

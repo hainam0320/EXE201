@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import shopService from '../../services/shopService';
 
-const API_URL = 'http://localhost:9999/api';
+const API_URL = 'http://103.90.224.148:9999/api';
 
 const ShopDetail = () => {
     const { id } = useParams();
@@ -59,7 +59,7 @@ const ShopDetail = () => {
     }
 
     // Xử lý đường dẫn logo và coverImage an toàn
-    const BACKEND_URL = 'http://localhost:9999';
+    const BACKEND_URL = 'http://103.90.224.148:9999';
     const logoUrl = shop.logo
       ? (shop.logo.startsWith('/uploads/') ? BACKEND_URL + shop.logo : shop.logo)
       : '/placeholder-image.jpg';

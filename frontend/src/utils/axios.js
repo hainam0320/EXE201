@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Tạo một instance của Axios
 const instance = axios.create({
-  baseURL: 'http://localhost:9999', // ⚠️ Thay đổi nếu backend chạy port khác
+  baseURL: 'http://103.90.224.148:9999', // ⚠️ Thay đổi nếu backend chạy port khác
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

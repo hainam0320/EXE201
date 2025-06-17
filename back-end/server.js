@@ -13,7 +13,7 @@ const app = express();
 
 // Set BASE_URL for uploads if not set in env
 if (!process.env.BASE_URL) {
-    process.env.BASE_URL = 'http://localhost:9999';
+    process.env.BASE_URL = 'http://103.90.224.148:9999';
 }
 
 // Middleware

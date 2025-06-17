@@ -6,7 +6,7 @@ import OrderManagement from './OrderManagement';
 import shopService from '../../services/shopService';
 import { orderAPI } from '../../services/api';
 
-const API_URL = 'http://localhost:9999/api';
+const API_URL = 'http://103.90.224.148:9999/api';
 
 const ORDER_STATUSES = {
   pending: 'Chờ xử lý',

@@ -8,7 +8,7 @@ const RETRY_DELAY = 5000; // 5 seconds
 
 const dbConnection = async (retryCount = 0) => {
   try {
-    const mongoURI = process.env.MONGO_URL || 'mongodb://localhost:27017/EXE2';
+    const mongoURI = process.env.MONGO_URL || 'mongodb://103.90.224.148:27017/EXE2';
     
     console.log('Attempting to connect to MongoDB...');
     
