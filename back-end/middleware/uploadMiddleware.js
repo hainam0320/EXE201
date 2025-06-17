@@ -2,16 +2,26 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Tạo thư mục uploads nếu chưa tồn tại
+// Tạo thư mục uploads và uploads/receipts nếu chưa tồn tại
 const uploadDir = 'uploads';
+const receiptsDir = path.join(uploadDir, 'receipts');
+
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
+}
+if (!fs.existsSync(receiptsDir)) {
+    fs.mkdirSync(receiptsDir);
 }
 
 // Cấu hình storage cho multer
 const storage = multer.diskStorage({
     destination: function(req, file, cb) {
-        cb(null, uploadDir);
+        // Kiểm tra loại file để lưu vào thư mục phù hợp
+        if (file.fieldname === 'receipt') {
+            cb(null, receiptsDir);
+        } else {
+            cb(null, uploadDir);
+        }
     },
     filename: function(req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -36,7 +46,8 @@ const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
     limits: {
-        fileSize: 1024 * 1024 * 5 // Giới hạn file 5MB
+        fileSize: 1024 * 1024 * 5, // Giới hạn file 5MB
+        files: 3 // Giới hạn số lượng file
     }
 });
 
@@ -46,19 +57,31 @@ const handleUploadError = (err, req, res, next) => {
         if (err.code === 'LIMIT_FILE_SIZE') {
             return res.status(400).json({
                 success: false,
-                error: 'Kích thước file không được vượt quá 5MB'
+                message: 'Kích thước file không được vượt quá 5MB'
+            });
+        }
+        if (err.code === 'LIMIT_FILE_COUNT') {
+            return res.status(400).json({
+                success: false,
+                message: 'Không thể upload quá 3 file'
+            });
+        }
+        if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+            return res.status(400).json({
+                success: false,
+                message: 'Field không hợp lệ'
             });
         }
         return res.status(400).json({
             success: false,
-            error: 'Lỗi khi upload file'
+            message: 'Lỗi khi upload file'
         });
     }
     
     if (err) {
         return res.status(400).json({
             success: false,
-            error: err.message
+            message: err.message
         });
     }
     next();

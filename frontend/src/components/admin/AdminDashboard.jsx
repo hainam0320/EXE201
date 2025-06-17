@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, Users, Package, ShoppingCart, Clock, CheckCircle, XCircle, BookOpen } from 'lucide-react';
+import { BarChart3, Users, Package, ShoppingCart, Clock, CheckCircle, XCircle, BookOpen, Lock, Unlock } from 'lucide-react';
 import { authAPI } from '../../services/api';
 import BlogManagement from './BlogManagement';
 import OrderManagement from './OrderManagement';
@@ -18,12 +18,14 @@ const AdminDashboard = () => {
         newUsersLast30Days: 0,
         usersByRole: {},
         usersByStatus: {},
-        pendingSellers: 0
+        pendingSellers: 0,
+        premiumUsers: 0
     });
     const [users, setUsers] = useState([]);
     const [usersLoading, setUsersLoading] = useState(false);
     const [loading, setLoading] = useState(true);
     const [statsLoading, setStatsLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState(null);
 
     useEffect(() => {
         fetchPendingCount();
@@ -92,6 +94,15 @@ const AdminDashboard = () => {
         );
     };
 
+    const getPremiumBadge = (user) => {
+        if (!user.isPremium) return null;
+        return (
+            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs ml-2">
+                Premium
+            </span>
+        );
+    };
+
     const getRoleDisplay = (user) => {
         if (user.role === 'admin') return 'Admin';
         if (user.role === 'seller') return 'Seller';
@@ -119,6 +130,42 @@ const AdminDashboard = () => {
       { id: 'blogs', label: 'Quản lý Blog', icon: BookOpen },
     ];
   
+    const handleBlockUser = async (userId) => {
+        try {
+            setActionLoading(userId);
+            const response = await authAPI.blockUser(userId);
+            // Update only the specific user in the list
+            setUsers(users.map(user => 
+                user._id === userId 
+                    ? { ...user, status: 'blocked' }
+                    : user
+            ));
+        } catch (error) {
+            console.error('Error blocking user:', error);
+            alert('Có lỗi xảy ra khi khóa tài khoản');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleUnblockUser = async (userId) => {
+        try {
+            setActionLoading(userId);
+            const response = await authAPI.unblockUser(userId);
+            // Update only the specific user in the list
+            setUsers(users.map(user => 
+                user._id === userId 
+                    ? { ...user, status: 'active' }
+                    : user
+            ));
+        } catch (error) {
+            console.error('Error unblocking user:', error);
+            alert('Có lỗi xảy ra khi mở khóa tài khoản');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold">Dashboard Admin</h1>
@@ -183,24 +230,30 @@ const AdminDashboard = () => {
                 {/* Additional Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="bg-white border border-gray-200 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Thống kê người dùng (30 ngày)</h3>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Thống kê người dùng</h3>
                     <div className="space-y-3">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Người dùng mới:</span>
+                        <span className="text-gray-600">Người dùng mới (30 ngày):</span>
                         <span className="font-semibold">
                           {statsLoading ? '...' : dashboardStats.newUsersLast30Days}
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Buyers:</span>
+                        <span className="text-gray-600">Tài khoản Premium:</span>
                         <span className="font-semibold">
-                          {statsLoading ? '...' : (dashboardStats.usersByRole.buyer || 0)}
+                          {statsLoading ? '...' : (dashboardStats.premiumUsers || 0)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Sellers:</span>
                         <span className="font-semibold">
                           {statsLoading ? '...' : (dashboardStats.usersByRole.seller || 0)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Buyers:</span>
+                        <span className="font-semibold">
+                          {statsLoading ? '...' : (dashboardStats.usersByRole.buyer || 0)}
                         </span>
                       </div>
                     </div>
@@ -453,23 +506,50 @@ const AdminDashboard = () => {
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div className="flex space-x-2">
-                                  {user.status === 'active' ? (
-                                    <button className="text-red-600 hover:text-red-800">
-                                      Khóa
-                                    </button>
-                                  ) : user.status === 'blocked' ? (
-                                    <button className="text-green-600 hover:text-green-800">
-                                      Mở khóa
-                                    </button>
-                                  ) : null}
-                                  
-                                  {user.status === 'pending' && user.requestedRole === 'seller' && (
-                                    <button 
-                                      onClick={() => navigate('/admin/seller-approval')}
-                                      className="text-yellow-600 hover:text-yellow-800"
-                                    >
-                                      Duyệt
-                                    </button>
+                                  {user.role !== 'admin' && (
+                                    user.status === 'blocked' ? (
+                                      <button
+                                        onClick={() => handleUnblockUser(user._id)}
+                                        disabled={actionLoading === user._id}
+                                        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                                      >
+                                        {actionLoading === user._id ? (
+                                          <span className="flex items-center">
+                                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Đang xử lý...
+                                          </span>
+                                        ) : (
+                                          <>
+                                            <Unlock className="h-4 w-4 mr-1" />
+                                            Mở khóa
+                                          </>
+                                        )}
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleBlockUser(user._id)}
+                                        disabled={actionLoading === user._id}
+                                        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                                      >
+                                        {actionLoading === user._id ? (
+                                          <span className="flex items-center">
+                                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Đang xử lý...
+                                          </span>
+                                        ) : (
+                                          <>
+                                            <Lock className="h-4 w-4 mr-1" />
+                                            Khóa
+                                          </>
+                                        )}
+                                      </button>
+                                    )
                                   )}
                                 </div>
                               </td>

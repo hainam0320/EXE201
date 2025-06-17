@@ -5,82 +5,125 @@ const nodemailer = require('nodemailer');
 const Order = require('../model/orderModel');
 const Product = require('../model/productModel');
 const multer = require('multer');
+const path = require('path');
+
+// Cấu hình multer để lưu file hóa đơn
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/receipts/');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  fileFilter: function (req, file, cb) {
+    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+      return cb(new Error('Chỉ chấp nhận file ảnh!'), false);
+    }
+    cb(null, true);
+  }
+}).single('receipt');
 
 exports.userRegister = async (req, res) => {
-  try {
-    const { userName, lastName, email, phone, password, role } = req.body;
-    
-    // Debug log để kiểm tra data nhận được
-    console.log('Registration data received:', {
-      userName, lastName, email, phone, 
-      role: role || 'undefined',
-      bodyKeys: Object.keys(req.body)
-    });
+  upload(req, res, async (err) => {
+    try {
+      if (err) {
+        console.error('Upload error:', err);
+        return res.status(400).send({ message: err.message });
+      }
 
-    if (!userName || !lastName || !email || !phone || !password) {
+      const { userName, lastName, email, phone, password, role } = req.body;
+      
+      // Debug log để kiểm tra data nhận được
+      console.log('Registration data received:', {
+        userName, lastName, email, phone, 
+        role: role || 'undefined',
+        bodyKeys: Object.keys(req.body),
+        file: req.file
+      });
+
+      if (!userName || !lastName || !email || !phone || !password) {
+        return res
+          .status(400)
+          .send({ message: "Please provide all require fields" });
+      }
+
+      // Kiểm tra nếu là seller thì phải có hóa đơn
+      if (role === 'seller' && !req.file) {
+        return res
+          .status(400)
+          .send({ message: "Vui lòng upload hóa đơn thanh toán" });
+      }
+
+      // Logic xử lý role và status
+      let userRole = 'user';
+      let userStatus = 'active';
+      let requestedRole = null;
+      let requestType = null;
+
+      if (role === 'buyer') {
+        userRole = 'buyer';
+        userStatus = 'active'; // Buyer được active ngay
+      } else if (role === 'seller') {
+        userRole = 'user'; // Vẫn là user cho đến khi admin duyệt
+        userStatus = 'pending'; // Pending để chờ admin duyệt
+        requestedRole = 'seller'; // Lưu role được yêu cầu
+        requestType = 'registration'; // Đánh dấu là yêu cầu đăng ký
+      }
+      
+      console.log('Final role assigned:', { userRole, userStatus, requestedRole, requestType });
+
+      const existingUser = await User.findOne({ email });
+
+      if (existingUser) {
+        return res
+          .status(400)
+          .send({ message: "User already register. Please login" });
+      }
+
+      const hashedPassword = await hashPassword(password);
+
+      const newUser = await User.create({
+        userName,
+        lastName,
+        email,
+        phone,
+        password: hashedPassword,
+        role: userRole,
+        status: userStatus,
+        requestedRole: requestedRole,
+        requestType: requestType,
+        receipt: req.file ? `/uploads/receipts/${req.file.filename}` : null
+      });
+
+      console.log('User created:', { 
+        role: newUser.role, 
+        status: newUser.status, 
+        requestedRole: newUser.requestedRole,
+        requestType: newUser.requestType,
+        receipt: newUser.receipt
+      });
+
+      // Tùy chỉnh message dựa trên role
+      let message = "User register successfully";
+      if (role === 'seller') {
+        message = "Đăng ký thành công! Tài khoản người bán của bạn đang chờ admin phê duyệt.";
+      } else if (role === 'buyer') {
+        message = "Đăng ký thành công! Bạn có thể đăng nhập ngay.";
+      }
+
       return res
-        .status(400)
-        .send({ message: "Please provide all require fields" });
+        .status(201)
+        .send({ message, newUser, needsApproval: role === 'seller' });
+    } catch (error) {
+      console.error('Registration error:', error);
+      return res.status(500).send({ message: "Something went wrong" });
     }
-
-    // Logic xử lý role và status
-    let userRole = 'user';
-    let userStatus = 'active';
-    let requestedRole = null;
-
-    if (role === 'buyer') {
-      userRole = 'buyer';
-      userStatus = 'active'; // Buyer được active ngay
-    } else if (role === 'seller') {
-      userRole = 'user'; // Vẫn là user cho đến khi admin duyệt
-      userStatus = 'pending'; // Pending để chờ admin duyệt
-      requestedRole = 'seller'; // Lưu role được yêu cầu
-    }
-    
-    console.log('Final role assigned:', { userRole, userStatus, requestedRole });
-
-    const existingUser = await User.findOne({ email });
-
-    if (existingUser) {
-      return res
-        .status(400)
-        .send({ message: "User already register. Please login" });
-    }
-
-    const hashedPassword = await hashPassword(password);
-
-    const newUser = await User.create({
-      userName,
-      lastName,
-      email,
-      phone,
-      password: hashedPassword,
-      role: userRole,
-      status: userStatus,
-      requestedRole: requestedRole,
-    });
-
-    console.log('User created:', { 
-      role: newUser.role, 
-      status: newUser.status, 
-      requestedRole: newUser.requestedRole 
-    });
-
-    // Tùy chỉnh message dựa trên role
-    let message = "User register successfully";
-    if (role === 'seller') {
-      message = "Đăng ký thành công! Tài khoản người bán của bạn đang chờ admin phê duyệt.";
-    } else if (role === 'buyer') {
-      message = "Đăng ký thành công! Bạn có thể đăng nhập ngay.";
-    }
-
-    return res
-      .status(201)
-      .send({ message, newUser, needsApproval: role === 'seller' });
-  } catch (error) {
-    console.error('Registration error:', error);
-    return res.status(500).send({ message: "Something went wrong" });
-  }
+  });
 };
 
 exports.userLogin = async (req, res) => {
@@ -109,6 +152,18 @@ exports.userLogin = async (req, res) => {
           message: "Tài khoản của bạn đang chờ phê duyệt. Vui lòng liên hệ admin.",
           status: 'pending',
           requestedRole: isUser.requestedRole
+        });
+    }
+
+    // Kiểm tra nếu là seller bị khóa do hết hạn premium
+    if (isUser.status === 'blocked' && isUser.role === 'seller' && !isUser.isPremium) {
+      return res
+        .status(403)
+        .send({ 
+          message: "Tài khoản của bạn đã bị khóa do hết hạn Premium.",
+          status: 'blocked',
+          needPremiumRenewal: true,
+          role: 'seller'
         });
     }
 
@@ -360,127 +415,48 @@ exports.updateUserRole = async (req, res) => {
 // Approve seller request
 exports.approveSellerRequest = async (req, res) => {
   try {
-    console.log('=== APPROVE SELLER REQUEST - DETAILED DEBUG ===');
-    console.log('Request params:', req.params);
-    console.log('Request body:', req.body);
-    console.log('userId:', req.params.userId);
-    console.log('action:', req.body.action);
-
     const { userId } = req.params;
     const { action } = req.body;
 
-    if (!userId || !action) {
-      console.log('Missing required fields:', { userId, action });
-      return res.status(400).json({ message: "Thiếu thông tin cần thiết!" });
-    }
-
-    console.log('Finding user with ID:', userId);
     const user = await User.findById(userId);
-    
+
     if (!user) {
-      console.log('User not found with ID:', userId);
-      return res.status(404).json({ message: "Không tìm thấy người dùng!" });
-    }
-
-    console.log('User found:', {
-      id: user._id,
-      email: user.email,
-      status: user.status,
-      role: user.role,
-      requestedRole: user.requestedRole
-    });
-
-    // Kiểm tra điều kiện hợp lệ
-    const isValidRequest = user.status === 'pending' && user.requestedRole === 'seller';
-    console.log('Request validation:', {
-      currentStatus: user.status,
-      currentRequestedRole: user.requestedRole,
-      isValidRequest
-    });
-
-    if (!isValidRequest) {
-      console.log('Invalid request conditions:', {
-        status: user.status,
-        requestedRole: user.requestedRole
-      });
-      return res.status(400).json({ 
-        message: "Không có yêu cầu seller nào để xử lý!",
-        details: {
-          status: user.status,
-          requestedRole: user.requestedRole
-        }
-      });
+      return res.status(404).send({ message: "Không tìm thấy người dùng" });
     }
 
     if (action === 'approve') {
-      console.log('Starting approval process...');
-      
-      // Lưu trạng thái cũ để debug
-      const oldState = {
-        role: user.role,
-        status: user.status,
-        requestedRole: user.requestedRole
-      };
-      console.log('Old state:', oldState);
-
-      // Cập nhật thông tin
-      const updateResult = await User.findByIdAndUpdate(
-        userId,
-        {
-          $set: {
-            role: 'seller',
-            status: 'active',
-            requestedRole: null
-          }
-        },
-        { new: true, runValidators: true }
-      );
-
-      console.log('Update result:', updateResult);
-
-      if (!updateResult) {
-        throw new Error('Failed to update user');
+      if (user.requestType === 'premium_renewal') {
+        // Xử lý phê duyệt gia hạn premium
+        user.isPremium = true;
+        user.premiumStartDate = new Date();
+        user.status = 'active';
+      } else {
+        // Xử lý phê duyệt đăng ký seller
+        user.role = 'seller';
+        user.status = 'active';
+        user.isPremium = true;
+        user.premiumStartDate = new Date();
       }
-
-      return res.json({ 
-        message: "Đã duyệt tài khoản seller thành công!", 
-        user: updateResult
-      });
+      user.requestedRole = null;
+      user.requestType = null;
     } else if (action === 'reject') {
-      console.log('Rejecting seller request...');
-      const updateResult = await User.findByIdAndUpdate(
-        userId,
-        {
-          $set: {
-            status: 'rejected',
-            requestedRole: null
-          }
-        },
-        { new: true, runValidators: true }
-      );
-
-      if (!updateResult) {
-        throw new Error('Failed to update user');
-      }
-
-      return res.json({ 
-        message: "Đã từ chối yêu cầu seller!", 
-        user: updateResult 
-      });
+      user.status = 'rejected';
+      user.requestedRole = null;
+      user.requestType = null;
     } else {
-      console.log('Invalid action:', action);
-      return res.status(400).json({ message: "Action không hợp lệ!" });
+      return res.status(400).send({ message: "Invalid action" });
     }
-  } catch (error) {
-    console.error("=== ERROR IN APPROVE SELLER ===");
-    console.error("Error details:", error);
-    console.error("Error message:", error.message);
-    console.error("Error stack:", error.stack);
-    return res.status(500).json({ 
-      message: "Lỗi server!", 
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+
+    await user.save();
+
+    return res.status(200).send({ 
+      message: action === 'approve' ? "Đã phê duyệt yêu cầu thành công" : "Đã từ chối yêu cầu",
+      user 
     });
+
+  } catch (error) {
+    console.error("Approve seller request error:", error);
+    return res.status(500).send({ message: "Something went wrong" });
   }
 };
 
@@ -505,78 +481,242 @@ exports.getPendingSellerRequests = async (req, res) => {
 
 // Get dashboard statistics
 exports.getDashboardStats = async (req, res) => {
+    try {
+        // Get total users
+        const totalUsers = await User.countDocuments();
+
+        // Get new users today
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const newUsersToday = await User.countDocuments({
+            createdAt: { $gte: today }
+        });
+
+        // Get new users in last 30 days
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const newUsersLast30Days = await User.countDocuments({
+            createdAt: { $gte: thirtyDaysAgo }
+        });
+
+        // Get users by role
+        const usersByRole = await User.aggregate([
+            { $group: { _id: '$role', count: { $sum: 1 } } }
+        ]);
+
+        // Get users by status
+        const usersByStatus = await User.aggregate([
+            { $group: { _id: '$status', count: { $sum: 1 } } }
+        ]);
+
+        // Get pending sellers count
+        const pendingSellers = await User.countDocuments({
+            status: 'pending',
+            requestedRole: 'seller'
+        });
+
+        // Get premium users count
+        const premiumUsers = await User.countDocuments({
+            isPremium: true
+        });
+
+        // Get total products
+        const totalProducts = await Product.countDocuments();
+
+        // Get total orders and revenue
+        const orders = await Order.find();
+        const totalOrders = orders.length;
+        const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+
+        // Format the role and status counts into objects
+        const roleCountsObj = usersByRole.reduce((obj, item) => {
+            obj[item._id] = item.count;
+            return obj;
+        }, {});
+
+        const statusCountsObj = usersByStatus.reduce((obj, item) => {
+            obj[item._id] = item.count;
+            return obj;
+        }, {});
+
+        return res.status(200).send({
+            success: true,
+            data: {
+                totalUsers,
+                newUsersToday,
+                newUsersLast30Days,
+                usersByRole: roleCountsObj,
+                usersByStatus: statusCountsObj,
+                pendingSellers,
+                premiumUsers,
+                totalProducts,
+                totalOrders,
+                totalRevenue
+            }
+        });
+    } catch (error) {
+        console.error('Get dashboard stats error:', error);
+        return res.status(500).send({ message: "Có lỗi xảy ra khi lấy thống kê" });
+    }
+};
+
+exports.blockUser = async (req, res) => {
   try {
-    // Đếm tổng số users
-    const totalUsers = await User.countDocuments();
-    
-    // Đếm users theo role
-    const usersByRole = await User.aggregate([
-      { $group: { _id: '$role', count: { $sum: 1 } } }
-    ]);
-    
-    // Đếm users theo status
-    const usersByStatus = await User.aggregate([
-      { $group: { _id: '$status', count: { $sum: 1 } } }
-    ]);
-    
-    // Đếm pending sellers
-    const pendingSellers = await User.countDocuments({ 
-      status: 'pending', 
-      requestedRole: 'seller' 
-    });
-    
-    // Users đăng ký trong 30 ngày qua
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    const newUsersLast30Days = await User.countDocuments({
-      createdAt: { $gte: thirtyDaysAgo }
-    });
-    
-    // Users đăng ký hôm nay
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    const newUsersToday = await User.countDocuments({
-      createdAt: { $gte: today, $lt: tomorrow }
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).send({ message: "Không tìm thấy người dùng" });
+    }
+
+    user.status = 'blocked';
+    await user.save();
+
+    return res.status(200).send({ 
+      message: "Đã khóa tài khoản thành công",
+      user 
     });
 
-    // Thống kê đơn hàng và doanh thu
-    const allOrders = await Order.find();
-    const paidOrders = allOrders.filter(order => order.paymentStatus === 'paid');
-    const totalOrders = allOrders.length;
-    const totalRevenue = paidOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-
-    // Thống kê sản phẩm
-    const totalProducts = await Product.countDocuments();
-
-    res.json({
-      success: true,
-      data: {
-        totalUsers,
-        usersByRole: usersByRole.reduce((acc, item) => {
-          acc[item._id] = item.count;
-          return acc;
-        }, {}),
-        usersByStatus: usersByStatus.reduce((acc, item) => {
-          acc[item._id] = item.count;
-          return acc;
-        }, {}),
-        pendingSellers,
-        newUsersLast30Days,
-        newUsersToday,
-        totalOrders,
-        totalProducts,
-        totalRevenue
-      }
-    });
   } catch (error) {
-    console.error("Dashboard stats error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Error fetching dashboard statistics" 
+    console.error("Block user error:", error);
+    return res.status(500).send({ message: "Something went wrong" });
+  }
+};
+
+exports.unblockUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).send({ message: "Không tìm thấy người dùng" });
+    }
+
+    user.status = 'active';
+    await user.save();
+
+    return res.status(200).send({ 
+      message: "Đã mở khóa tài khoản thành công",
+      user 
     });
+
+  } catch (error) {
+    console.error("Unblock user error:", error);
+    return res.status(500).send({ message: "Something went wrong" });
+  }
+};
+
+exports.getPremiumInfo = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).send({ message: "Không tìm thấy người dùng" });
+        }
+
+        // Nếu không phải seller, không cần kiểm tra premium
+        if (user.role !== 'seller') {
+            return res.status(200).send({
+                isPremium: false,
+                message: "Tài khoản không phải là seller"
+            });
+        }
+
+        // Nếu đã bị khóa, trả về thông tin
+        if (user.status === 'blocked') {
+            return res.status(200).send({
+                isPremium: false,
+                isBlocked: true,
+                message: "Tài khoản đã bị khóa"
+            });
+        }
+
+        if (!user.isPremium || !user.premiumStartDate) {
+            // Nếu là seller nhưng không có premium, khóa tài khoản
+            user.status = 'blocked';
+            user.isPremium = false;
+            user.premiumStartDate = null;
+            await user.save();
+
+            return res.status(200).send({
+                isPremium: false,
+                isBlocked: true,
+                message: "Tài khoản premium đã hết hạn và đã bị khóa"
+            });
+        }
+
+        // Tính số ngày còn lại (30 ngày)
+        const premiumDuration = 30;
+        const startDate = new Date(user.premiumStartDate);
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + premiumDuration);
+        
+        const today = new Date();
+        const remainingDays = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+
+        // Nếu hết hạn, tự động khóa tài khoản
+        if (remainingDays <= 0) {
+            user.isPremium = false;
+            user.premiumStartDate = null;
+            user.status = 'blocked';
+            await user.save();
+
+            return res.status(200).send({
+                isPremium: false,
+                isBlocked: true,
+                message: "Tài khoản premium đã hết hạn và đã bị khóa. Vui lòng liên hệ admin để được hỗ trợ."
+            });
+        }
+
+        return res.status(200).send({
+            isPremium: true,
+            startDate: user.premiumStartDate,
+            endDate: endDate,
+            remainingDays: remainingDays,
+            message: `Còn ${remainingDays} ngày premium`
+        });
+    } catch (error) {
+        console.error('Get premium info error:', error);
+        return res.status(500).send({ message: "Có lỗi xảy ra khi lấy thông tin premium" });
+    }
+};
+
+exports.renewPremium = async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!req.files || !req.files.receipt) {
+      return res
+        .status(400)
+        .send({ message: "Vui lòng upload hóa đơn thanh toán" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res
+        .status(404)
+        .send({ message: "Không tìm thấy người dùng" });
+    }
+
+    if (user.role !== 'seller') {
+      return res
+        .status(400)
+        .send({ message: "Chỉ tài khoản seller mới cần gia hạn Premium" });
+    }
+
+    // Cập nhật thông tin user
+    user.status = 'pending';
+    user.requestedRole = 'seller';
+    user.requestType = 'premium_renewal'; // Đánh dấu là yêu cầu gia hạn premium
+    user.receipt = `/${req.files.receipt[0].path.replace(/\\/g, '/')}`;
+    await user.save();
+
+    return res
+      .status(200)
+      .send({ message: "Yêu cầu gia hạn Premium đã được gửi thành công" });
+
+  } catch (error) {
+    console.error("Premium renewal error:", error);
+    return res.status(500).send({ message: "Something went wrong" });
   }
 };

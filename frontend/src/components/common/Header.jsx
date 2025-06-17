@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, Heart, User, Search } from 'lucide-react';
+import { ShoppingCart, Heart, User, Search, Crown, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { productAPI } from '../../services/api';
+import { productAPI, authAPI } from '../../services/api';
 
 const Header = () => {
   const { currentUser, logout } = useAuth();
@@ -12,6 +12,7 @@ const Header = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [premiumInfo, setPremiumInfo] = useState(null);
   const searchRef = useRef(null);
   const navigate = useNavigate();
 
@@ -45,6 +46,50 @@ const Header = () => {
     return () => clearTimeout(debounce);
   }, [searchTerm]);
 
+  useEffect(() => {
+    const fetchPremiumInfo = async () => {
+      if (currentUser?.role === 'seller') {
+        try {
+          const response = await authAPI.getPremiumInfo();
+          setPremiumInfo(response.data);
+          
+          // Nếu tài khoản bị khóa do hết hạn premium, tự động đăng xuất
+          if (response.data.isBlocked) {
+            alert("Tài khoản của bạn đã bị khóa do hết hạn Premium. Vui lòng liên hệ admin để được hỗ trợ.");
+            handleLogout();
+          }
+        } catch (error) {
+          console.error('Error fetching premium info:', error);
+        }
+      }
+    };
+    fetchPremiumInfo();
+  }, [currentUser]);
+
+  const checkPremiumStatus = async () => {
+    if (currentUser?.role === 'seller') {
+      try {
+        const response = await authAPI.getPremiumInfo();
+        setPremiumInfo(response.data);
+        
+        if (response.data.isBlocked) {
+          alert("Tài khoản của bạn đã bị khóa do hết hạn Premium. Vui lòng liên hệ admin để được hỗ trợ.");
+          await handleLogout();
+        }
+      } catch (error) {
+        console.error('Error checking premium status:', error);
+      }
+    }
+  };
+
+  // Kiểm tra status premium khi component mount và mỗi phút
+  useEffect(() => {
+    checkPremiumStatus();
+    const interval = setInterval(checkPremiumStatus, 60000); // Kiểm tra mỗi phút
+
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchTerm.trim()) {
@@ -60,10 +105,14 @@ const Header = () => {
     setSearchTerm('');
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-    setShowMenu(false);
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+      setShowMenu(false);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
@@ -173,6 +222,33 @@ const Header = () => {
                     )}
                     {currentUser.role === 'seller' && (
                       <>
+                        {premiumInfo && premiumInfo.isPremium ? (
+                          <div className="px-4 py-2 text-sm bg-yellow-50">
+                            <div className="flex items-center space-x-2 text-yellow-700">
+                              <Crown className="h-4 w-4" />
+                              <span className="font-medium">Premium</span>
+                            </div>
+                            <div className="text-yellow-600 text-xs mt-1">
+                              Còn {premiumInfo.remainingDays} ngày
+                            </div>
+                            {premiumInfo.remainingDays <= 5 && (
+                              <div className="flex items-center space-x-1 text-red-600 text-xs mt-1">
+                                <AlertTriangle className="h-3 w-3" />
+                                <span>Sắp hết hạn!</span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="px-4 py-2 text-sm bg-red-50">
+                            <div className="flex items-center space-x-2 text-red-700">
+                              <AlertTriangle className="h-4 w-4" />
+                              <span className="font-medium">Premium hết hạn</span>
+                            </div>
+                            <div className="text-red-600 text-xs mt-1">
+                              Tài khoản sẽ bị khóa
+                            </div>
+                          </div>
+                        )}
                         <Link to="/seller/products" className="block px-4 py-2 text-sm hover:bg-gray-100" onClick={() => setShowMenu(false)}>Quản lý sản phẩm</Link>
                         <Link to="/seller/orders" className="block px-4 py-2 text-sm hover:bg-gray-100" onClick={() => setShowMenu(false)}>Đơn hàng bán</Link>
                       </>

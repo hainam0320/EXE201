@@ -19,18 +19,52 @@ api.interceptors.request.use((config) => {
 });
 
 export const authAPI = {
-  login: (credentials) => api.post('/auth/login', credentials),
-  register: (userData) => api.post('/auth/register', userData),
+  login: (data) => api.post('/auth/login', data),
+  register: (data) => {
+    const formData = new FormData();
+    
+    // Thêm các trường thông tin cơ bản
+    Object.keys(data).forEach(key => {
+      if (key !== 'logo' && key !== 'coverImage' && key !== 'receipt') {
+        formData.append(key, data[key]);
+      }
+    });
+    
+    // Thêm các file nếu có
+    if (data.logo) {
+      formData.append('logo', data.logo);
+    }
+    if (data.coverImage) {
+      formData.append('coverImage', data.coverImage);
+    }
+    if (data.receipt) {
+      formData.append('receipt', data.receipt);
+    }
+
+    return api.post('/auth/register', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
   logout: () => api.post('/auth/logout'),
-  forgotPassword: (email) => api.post('/auth/forget-password', { email }),
-  resetPassword: (token, password) => api.post(`/auth/reset-password/${token}`, { password }),
+  forgotPassword: (data) => api.post('/auth/forgot-password', data),
+  resetPassword: (data) => api.post('/auth/reset-password', data),
   changePassword: (data) => api.put('/auth/change-password', data),
   getPendingSellers: () => api.get('/auth/pending-sellers'),
   approveSellerRequest: (userId, action) => api.put(`/auth/approve-seller/${userId}`, { action }),
   getDashboardStats: () => api.get('/auth/dashboard-stats'),
   getAllUsers: () => api.get('/auth/users'),
   getProfile: () => api.get('/auth/profile'),
-  updateProfile: (data) => api.put('/auth/profile', data)
+  updateProfile: (data) => api.put('/auth/profile', data),
+  blockUser: (userId) => api.put(`/auth/users/${userId}/block`),
+  unblockUser: (userId) => api.put(`/auth/users/${userId}/unblock`),
+  getPremiumInfo: () => api.get('/auth/premium-info'),
+  renewPremium: (formData) => api.post('/auth/renew-premium', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  }),
 };
 
 export const productAPI = {

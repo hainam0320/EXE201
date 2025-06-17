@@ -3,6 +3,36 @@ import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import { Check, X, Clock, User, Mail, Phone, Calendar } from 'lucide-react';
 
+// Modal component để hiển thị ảnh phóng to
+const ImageModal = ({ imageUrl, isOpen, onClose }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div 
+            className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-75 flex items-center justify-center p-4" 
+            onClick={onClose}
+            style={{ backdropFilter: 'blur(5px)' }}
+        >
+            <div 
+                className="relative bg-white rounded-lg p-2 max-w-[90vw] max-h-[90vh]"
+                onClick={e => e.stopPropagation()}
+            >
+                <button
+                    onClick={onClose}
+                    className="absolute -top-10 right-0 text-white hover:text-gray-300"
+                >
+                    <X className="h-8 w-8" />
+                </button>
+                <img
+                    src={imageUrl}
+                    alt="Hóa đơn chi tiết"
+                    className="max-w-full max-h-[85vh] object-contain"
+                />
+            </div>
+        </div>
+    );
+};
+
 const SellerApproval = () => {
     const navigate = useNavigate();
     const [pendingSellers, setPendingSellers] = useState([]);
@@ -10,6 +40,7 @@ const SellerApproval = () => {
     const [actionLoading, setActionLoading] = useState({});
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [selectedImage, setSelectedImage] = useState(null);
 
     useEffect(() => {
         fetchPendingSellers();
@@ -19,7 +50,8 @@ const SellerApproval = () => {
         try {
             setLoading(true);
             const response = await authAPI.getPendingSellers();
-            setPendingSellers(response.data.users);
+            console.log('Pending sellers data:', response.data);
+            setPendingSellers(response.data.users || []);
         } catch (error) {
             console.error('Error fetching pending sellers:', error);
             setError('Không thể tải danh sách chờ duyệt');
@@ -30,17 +62,11 @@ const SellerApproval = () => {
 
     const handleApproval = async (userId, action) => {
         try {
-            console.log('=== HANDLE APPROVAL ===');
-            console.log('userId:', userId);
-            console.log('action:', action);
-            console.log('token:', localStorage.getItem('token'));
-            
             setActionLoading(prev => ({ ...prev, [userId]: true }));
             setError('');
             setSuccess('');
 
             const response = await authAPI.approveSellerRequest(userId, action);
-            console.log('API Response:', response);
             
             if (action === 'approve') {
                 setSuccess(`Đã duyệt tài khoản seller thành công!`);
@@ -48,22 +74,10 @@ const SellerApproval = () => {
                 setSuccess(`Đã từ chối yêu cầu seller!`);
             }
 
-            // Refresh danh sách
             await fetchPendingSellers();
         } catch (error) {
             console.error('Error handling approval:', error);
-            console.error('Error details:', {
-                response: error.response,
-                message: error.message,
-                status: error.response?.status,
-                data: error.response?.data
-            });
-            
-            if (error.response && error.response.data && error.response.data.message) {
-                setError(error.response.data.message);
-            } else {
-                setError('Có lỗi xảy ra khi xử lý yêu cầu');
-            }
+            setError(error.response?.data?.message || 'Có lỗi xảy ra khi xử lý yêu cầu');
         } finally {
             setActionLoading(prev => ({ ...prev, [userId]: false }));
         }
@@ -79,6 +93,26 @@ const SellerApproval = () => {
         });
     };
 
+    // Hàm xử lý khi click vào ảnh
+    const handleImageClick = (imageUrl) => {
+        console.log('Clicked image URL:', imageUrl); // Debug log
+        if (imageUrl) {
+            // Xử lý đường dẫn ảnh
+            const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:9999';
+            const normalizedPath = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+            const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${normalizedPath}`;
+            console.log('Full image URL:', fullImageUrl); // Debug log
+            setSelectedImage(fullImageUrl);
+        }
+    };
+
+    const getRequestTypeText = (user) => {
+        if (user.requestType === 'premium_renewal') {
+            return 'Gia hạn Premium';
+        }
+        return 'Đăng ký Seller';
+    };
+
     if (loading) {
         return (
             <div className="max-w-6xl mx-auto p-6">
@@ -92,6 +126,13 @@ const SellerApproval = () => {
 
     return (
         <div className="max-w-6xl mx-auto p-6">
+            {/* Modal hiển thị ảnh */}
+            <ImageModal
+                imageUrl={selectedImage}
+                isOpen={!!selectedImage}
+                onClose={() => setSelectedImage(null)}
+            />
+            
             <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-2xl font-bold text-gray-800 flex items-center">
@@ -155,6 +196,9 @@ const SellerApproval = () => {
                                         Ngày đăng ký
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Hóa đơn
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Trạng thái
                                     </th>
                                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -174,7 +218,7 @@ const SellerApproval = () => {
                                                 </div>
                                                 <div className="ml-4">
                                                     <div className="text-sm font-medium text-gray-900">
-                                                        {seller.userName} {seller.lastName}
+                                                        {getRequestTypeText(seller)} - {seller.userName} {seller.lastName}
                                                     </div>
                                                     <div className="text-sm text-gray-500">
                                                         ID: {seller._id}
@@ -199,6 +243,28 @@ const SellerApproval = () => {
                                                 <Calendar className="h-4 w-4 text-gray-400 mr-2" />
                                                 {formatDate(seller.createdAt)}
                                             </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {seller.receipt ? (
+                                                <div 
+                                                    className="relative group cursor-pointer"
+                                                    onClick={() => handleImageClick(seller.receipt)}
+                                                >
+                                                    <div className="h-20 w-20 rounded overflow-hidden">
+                                                        <img
+                                                            src={`${process.env.REACT_APP_API_URL || 'http://localhost:9999'}${seller.receipt.startsWith('/') ? '' : '/'}${seller.receipt}`}
+                                                            alt="Hóa đơn"
+                                                            className="h-full w-full object-cover transition-transform transform group-hover:scale-105"
+                                                        />
+                                                    </div>
+                                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity rounded"></div>
+                                                    <div className="absolute bottom-0 left-0 right-0 p-1 bg-black bg-opacity-50 text-white text-xs text-center opacity-0 group-hover:opacity-100 transition-opacity rounded-b">
+                                                        Click để xem
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <span className="text-red-500 text-sm">Chưa có hóa đơn</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
