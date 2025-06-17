@@ -8,6 +8,14 @@ import { orderAPI } from '../../services/api';
 
 const API_URL = 'http://localhost:9999/api';
 
+const ORDER_STATUSES = {
+  pending: 'Chờ xử lý',
+  confirmed: 'Đã xác nhận',
+  shipped: 'Đang giao',
+  delivered: 'Đã giao',
+  cancelled: 'Đã hủy'
+};
+
 const SellerDashboard = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const [dashboardStats, setDashboardStats] = useState({
@@ -114,6 +122,19 @@ const SellerDashboard = () => {
       }
     };
   
+    const handleStatusChange = async (orderId, newStatus) => {
+      try {
+        const response = await orderAPI.updateSellerStatus(orderId, newStatus);
+        if (response.data.success) {
+          setOrders(orders.map(order => 
+            order._id === orderId ? { ...order, status: newStatus } : order
+          ));
+        }
+      } catch (error) {
+        console.error('Error updating order status:', error);
+      }
+    };
+  
     if (checkingShop) return <div>Đang kiểm tra cửa hàng...</div>;
     if (errorMsg) {
       return <div className="text-center py-8 text-red-600">{errorMsg}</div>;
@@ -169,8 +190,19 @@ const SellerDashboard = () => {
                         <div>
                           <span className="font-semibold">Mã đơn hàng:</span> {order._id}
                         </div>
-                        <div>
-                          <span className="font-semibold">Trạng thái:</span> <span className="text-pink-600">{order.status}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">Trạng thái:</span>
+                          <select
+                            className="px-3 py-1 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                            value={order.status}
+                            onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                          >
+                            {Object.entries(ORDER_STATUSES).map(([value, label]) => (
+                              <option key={value} value={value}>
+                                {label}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </div>
                       <div className="mb-2">

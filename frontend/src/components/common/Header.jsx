@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, Heart, User, Search, Crown, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, Heart, User, Search, Menu, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { productAPI, authAPI } from '../../services/api';
+import { productAPI } from '../../services/api';
 
 const Header = () => {
   const { currentUser, logout } = useAuth();
@@ -12,83 +12,43 @@ const Header = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [premiumInfo, setPremiumInfo] = useState(null);
   const searchRef = useRef(null);
   const navigate = useNavigate();
 
-  // Handle click outside search box
+  useEffect(() => {
+    console.log('Current User:', currentUser);
+    console.log('User Role:', currentUser?.role);
+    console.log('Is Buyer?', currentUser?.role === 'buyer');
+  }, [currentUser]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowSearch(false);
       }
     };
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Debounce search input
   useEffect(() => {
-    const fetchSearch = async () => {
+    const searchProducts = async () => {
       if (searchTerm.trim()) {
         try {
-          const res = await productAPI.search(searchTerm);
-          setSearchResults(res.data.data || []);
+          const response = await productAPI.search(searchTerm);
+          setSearchResults(response.data.data || []);
         } catch (error) {
-          console.error('Search error:', error);
+          console.error('Error searching products:', error);
         }
       } else {
         setSearchResults([]);
       }
     };
 
-    const debounce = setTimeout(fetchSearch, 300);
-    return () => clearTimeout(debounce);
+    const debounceTimer = setTimeout(searchProducts, 300);
+    return () => clearTimeout(debounceTimer);
   }, [searchTerm]);
-
-  useEffect(() => {
-    const fetchPremiumInfo = async () => {
-      if (currentUser?.role === 'seller') {
-        try {
-          const response = await authAPI.getPremiumInfo();
-          setPremiumInfo(response.data);
-          
-          // Nếu tài khoản bị khóa do hết hạn premium, tự động đăng xuất
-          if (response.data.isBlocked) {
-            alert("Tài khoản của bạn đã bị khóa do hết hạn Premium. Vui lòng liên hệ admin để được hỗ trợ.");
-            handleLogout();
-          }
-        } catch (error) {
-          console.error('Error fetching premium info:', error);
-        }
-      }
-    };
-    fetchPremiumInfo();
-  }, [currentUser]);
-
-  const checkPremiumStatus = async () => {
-    if (currentUser?.role === 'seller') {
-      try {
-        const response = await authAPI.getPremiumInfo();
-        setPremiumInfo(response.data);
-        
-        if (response.data.isBlocked) {
-          alert("Tài khoản của bạn đã bị khóa do hết hạn Premium. Vui lòng liên hệ admin để được hỗ trợ.");
-          await handleLogout();
-        }
-      } catch (error) {
-        console.error('Error checking premium status:', error);
-      }
-    }
-  };
-
-  // Kiểm tra status premium khi component mount và mỗi phút
-  useEffect(() => {
-    checkPremiumStatus();
-    const interval = setInterval(checkPremiumStatus, 60000); // Kiểm tra mỗi phút
-
-    return () => clearInterval(interval);
-  }, [currentUser]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -99,84 +59,122 @@ const Header = () => {
     }
   };
 
-  const handleProductClick = (id) => {
-    navigate(`/product/${id}`);
+  const handleProductClick = (productId) => {
+    navigate(`/product/${productId}`);
     setShowSearch(false);
     setSearchTerm('');
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-      setShowMenu(false);
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+    setShowMenu(false);
   };
 
   return (
-    <header className="bg-white shadow-md sticky top-0 z-50">
+    <header className="bg-pink-50 shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link to="/" className="text-2xl font-bold text-pink-600">🌸 HoaMuse</Link>
+          <div className="flex items-center">
+            <Link 
+              to="/"
+              className="flex items-center"
+            >
+              <img 
+                src="/hoamuse.jpg" 
+                alt="HoaMuse Logo" 
+                className="h-56 w-auto object-contain py-1"
+              />
+            </Link>
+          </div>
 
-          {/* Menu */}
           <nav className="hidden md:flex space-x-8">
-            <Link to="/" className="text-gray-700 hover:text-pink-600">Trang chủ</Link>
-            <Link to="/shop" className="text-gray-700 hover:text-pink-600">Sản phẩm</Link>
-            <Link to="/blog" className="text-gray-700 hover:text-pink-600">Blog</Link>
+            <Link 
+              to="/"
+              className="text-gray-700 hover:text-pink-600 transition-colors"
+            >
+              Trang chủ
+            </Link>
+            <Link 
+              to="/shop"
+              className="text-gray-700 hover:text-pink-600 transition-colors"
+            >
+              Sản phẩm
+            </Link>
+            <Link 
+              to="/blog"
+              className="text-gray-700 hover:text-pink-600 transition-colors"
+            >
+              Blog
+            </Link>
             {currentUser?.role === 'seller' && (
-              <Link to="/seller/dashboard" className="text-gray-700 hover:text-pink-600">Quản lý</Link>
+              <Link 
+                to="/seller/dashboard"
+                className="text-gray-700 hover:text-pink-600 transition-colors"
+              >
+                Quản lý
+              </Link>
             )}
             {currentUser?.role === 'admin' && (
-              <Link to="/admin/dashboard" className="text-gray-700 hover:text-pink-600">Admin</Link>
+              <Link 
+                to="/admin/dashboard"
+                className="text-gray-700 hover:text-pink-600 transition-colors"
+              >
+                Admin
+              </Link>
             )}
           </nav>
 
-          {/* Icons & User */}
           <div className="flex items-center space-x-4">
-            {/* Search */}
             <div className="relative" ref={searchRef}>
-              <button onClick={() => setShowSearch(!showSearch)} className="p-2 hover:bg-gray-100 rounded-full">
+              <button 
+                onClick={() => setShowSearch(!showSearch)} 
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
                 <Search className="h-5 w-5" />
               </button>
+              
               {showSearch && (
                 <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl p-4 z-50">
                   <form onSubmit={handleSearch} className="flex items-center space-x-2">
                     <input
+                      type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Tìm kiếm hoa..."
                       className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:border-pink-500"
                       autoFocus
                     />
-                    <button type="submit" className="p-2 bg-pink-600 text-white rounded-full hover:bg-pink-700">
+                    <button
+                      type="submit"
+                      className="p-2 bg-pink-600 text-white rounded-full hover:bg-pink-700 focus:outline-none"
+                    >
                       <Search className="h-5 w-5" />
                     </button>
                   </form>
+                  
                   {searchResults.length > 0 && (
                     <div className="mt-4 max-h-96 overflow-y-auto">
-                      {searchResults.map((product) => (
+                      {searchResults.map(product => (
                         <div
                           key={product._id}
                           onClick={() => handleProductClick(product._id)}
-                          className="flex items-center p-2 space-x-4 hover:bg-gray-50 rounded-lg cursor-pointer"
+                          className="flex items-center space-x-4 p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
                         >
                           <img
                             src={product.image}
                             alt={product.name}
+                            className="w-12 h-12 object-cover rounded"
                             onError={(e) => {
                               e.target.src = 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=300';
                             }}
-                            className="w-12 h-12 object-cover rounded"
                           />
                           <div>
                             <h4 className="font-medium text-gray-800">{product.name}</h4>
-                            <p className="text-sm text-pink-600">
+                            <p className="text-pink-600 text-sm">
                               {new Intl.NumberFormat('vi-VN', {
                                 style: 'currency',
-                                currency: 'VND',
+                                currency: 'VND'
                               }).format(product.price)}
                             </p>
                           </div>
@@ -187,17 +185,23 @@ const Header = () => {
                 </div>
               )}
             </div>
-
-            {/* Wishlist */}
+            
             {currentUser && (
-              <Link to="/wishlist" className="p-2 hover:bg-gray-100 rounded-full">
-                <Heart className="h-5 w-5" />
-              </Link>
+              <>
+                <Link 
+                  to="/wishlist"
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                >
+                  <Heart className="h-5 w-5" />
+                </Link>
+              </>
             )}
 
-            {/* Cart */}
-            {currentUser?.role === 'buyer' && (
-              <Link to="/cart" className="relative p-2 hover:bg-gray-100 rounded-full">
+            {currentUser && currentUser.role === 'buyer' && (
+              <Link 
+                to="/cart"
+                className="p-2 hover:bg-gray-100 rounded-full relative"
+              >
                 <ShoppingCart className="h-5 w-5" />
                 {cartItems.length > 0 && (
                   <span className="absolute -top-1 -right-1 bg-pink-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -207,64 +211,97 @@ const Header = () => {
               </Link>
             )}
 
-            {/* Authenticated user menu */}
             {currentUser ? (
               <div className="relative">
-                <button onClick={() => setShowMenu(!showMenu)} className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-full">
+                <button 
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-full"
+                >
                   <User className="h-5 w-5" />
                   <span className="hidden md:block">{currentUser.name}</span>
                 </button>
                 {showMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                    <Link to="/profile" className="block px-4 py-2 text-sm hover:bg-gray-100" onClick={() => setShowMenu(false)}>Hồ sơ cá nhân</Link>
+                    <Link 
+                      to="/profile"
+                      onClick={() => setShowMenu(false)}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    >
+                      Hồ sơ cá nhân
+                    </Link>
                     {currentUser.role === 'buyer' && (
-                      <Link to="/order-history" className="block px-4 py-2 text-sm hover:bg-gray-100" onClick={() => setShowMenu(false)}>Lịch sử đơn hàng</Link>
+                      <Link 
+                        to="/order-history"
+                        onClick={() => setShowMenu(false)}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      >
+                        Lịch sử đơn hàng
+                      </Link>
                     )}
                     {currentUser.role === 'seller' && (
                       <>
-                        {premiumInfo && premiumInfo.isPremium ? (
-                          <div className="px-4 py-2 text-sm bg-yellow-50">
-                            <div className="flex items-center space-x-2 text-yellow-700">
-                              <Crown className="h-4 w-4" />
-                              <span className="font-medium">Premium</span>
-                            </div>
-                            <div className="text-yellow-600 text-xs mt-1">
-                              Còn {premiumInfo.remainingDays} ngày
-                            </div>
-                            {premiumInfo.remainingDays <= 5 && (
-                              <div className="flex items-center space-x-1 text-red-600 text-xs mt-1">
-                                <AlertTriangle className="h-3 w-3" />
-                                <span>Sắp hết hạn!</span>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="px-4 py-2 text-sm bg-red-50">
-                            <div className="flex items-center space-x-2 text-red-700">
-                              <AlertTriangle className="h-4 w-4" />
-                              <span className="font-medium">Premium hết hạn</span>
-                            </div>
-                            <div className="text-red-600 text-xs mt-1">
-                              Tài khoản sẽ bị khóa
-                            </div>
-                          </div>
-                        )}
-                        <Link to="/seller/products" className="block px-4 py-2 text-sm hover:bg-gray-100" onClick={() => setShowMenu(false)}>Quản lý sản phẩm</Link>
-                        <Link to="/seller/orders" className="block px-4 py-2 text-sm hover:bg-gray-100" onClick={() => setShowMenu(false)}>Đơn hàng bán</Link>
+                        <Link 
+                          to="/seller/dashboard"
+                          onClick={() => setShowMenu(false)}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        >
+                          Dashboard bán hàng
+                        </Link>
+                        <Link 
+                          to="/seller/products"
+                          onClick={() => setShowMenu(false)}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        >
+                          Quản lý sản phẩm
+                        </Link>
+                        <Link 
+                          to="/seller/orders"
+                          onClick={() => setShowMenu(false)}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        >
+                          Đơn hàng bán
+                        </Link>
                       </>
                     )}
                     {currentUser.role === 'admin' && (
-                      <Link to="/admin/dashboard" className="block px-4 py-2 text-sm hover:bg-gray-100" onClick={() => setShowMenu(false)}>Admin Dashboard</Link>
+                      <Link 
+                        to="/admin/dashboard"
+                        onClick={() => setShowMenu(false)}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      >
+                        Admin Dashboard
+                      </Link>
                     )}
-                    <Link to="/change-password" className="block px-4 py-2 text-sm hover:bg-gray-100" onClick={() => setShowMenu(false)}>Đổi mật khẩu</Link>
-                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Đăng xuất</button>
+                    <Link 
+                      to="/change-password"
+                      onClick={() => setShowMenu(false)}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    >
+                      Đổi mật khẩu
+                    </Link>
+                    <button 
+                      onClick={handleLogout}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    >
+                      Đăng xuất
+                    </button>
                   </div>
                 )}
               </div>
             ) : (
               <div className="space-x-2">
-                <Link to="/login" className="px-4 py-2 border border-pink-600 text-pink-600 rounded hover:bg-pink-50">Đăng nhập</Link>
-                <Link to="/register" className="px-4 py-2 bg-pink-600 text-white rounded hover:bg-pink-700">Đăng ký</Link>
+                <Link 
+                  to="/login"
+                  className="px-4 py-2 text-pink-600 border border-pink-600 rounded-md hover:bg-pink-50 transition-colors"
+                >
+                  Đăng nhập
+                </Link>
+                <Link 
+                  to="/register"
+                  className="px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors"
+                >
+                  Đăng ký
+                </Link>
               </div>
             )}
           </div>

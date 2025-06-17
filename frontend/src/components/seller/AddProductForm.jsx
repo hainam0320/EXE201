@@ -38,10 +38,12 @@ const AddProductForm = ({ onAdd, onClose }) => {
   };
 
   const handleCategoryChange = (e) => {
-    const selected = Array.from(e.target.selectedOptions).map(option => option.value);
+    const { value, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      category: selected
+      category: checked 
+        ? [...prev.category, value]
+        : prev.category.filter(cat => cat !== value)
     }));
   };
 
@@ -100,20 +102,23 @@ const AddProductForm = ({ onAdd, onClose }) => {
           <input name="stock" required type="number" placeholder="Tồn kho" value={formData.stock} onChange={handleChange} className="w-full border rounded px-3 py-2" />
           <textarea name="description" placeholder="Mô tả" value={formData.description} onChange={handleChange} className="w-full border rounded px-3 py-2" />
 
-          {/* Chọn nhiều danh mục */}
+          {/* Chọn danh mục */}
           <div>
             <label className="block mb-1 font-medium">Chọn danh mục</label>
-            <select
-              multiple
-              value={formData.category}
-              onChange={handleCategoryChange}
-              className="w-full border rounded px-2 py-2"
-            >
+            <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-2">
               {categories.map(cat => (
-                <option key={cat._id} value={cat._id}>{cat.name}</option>
+                <label key={cat._id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                  <input
+                    type="checkbox"
+                    value={cat._id}
+                    checked={formData.category.includes(cat._id)}
+                    onChange={handleCategoryChange}
+                    className="rounded text-pink-600 focus:ring-pink-500"
+                  />
+                  <span>{cat.name}</span>
+                </label>
               ))}
-            </select>
-            <small className="text-gray-500">Giữ Ctrl (Windows) hoặc Cmd (Mac) để chọn nhiều danh mục</small>
+            </div>
           </div>
 
           {/* Upload ảnh */}
