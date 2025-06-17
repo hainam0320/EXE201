@@ -64,20 +64,10 @@ const Register = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Kiểm tra định dạng file
-      if (!file.type.match(/image\/(jpeg|jpg|png|gif)/)) {
-        setError('Vui lòng chỉ upload file ảnh (jpeg, jpg, png, gif)');
-        fileInputRef.current.value = '';
+      if (!file.type.includes('image')) {
+        setError('Vui lòng chỉ upload file ảnh');
         return;
       }
-      
-      // Kiểm tra kích thước file
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Kích thước file không được vượt quá 5MB');
-        fileInputRef.current.value = '';
-        return;
-      }
-      
       setReceipt(file);
       setError('');
     }
@@ -109,26 +99,26 @@ const Register = () => {
     }
 
     try {
-      const { confirmPassword, hasPaid, ...registerData } = formData;
-      const dataToSend = { ...registerData };
-      
-      if (receipt) {
-        dataToSend.receipt = receipt;
+      const form = new FormData();
+
+      // Append all fields except confirmPassword and hasPaid
+      const fieldsToSend = ['userName', 'lastName', 'email', 'phone', 'password', 'role'];
+      fieldsToSend.forEach(key => {
+        form.append(key, formData[key]);
+      });
+
+      // Append receipt file if role is seller
+      if (formData.role === 'seller' && receipt) {
+        form.append('receipt', receipt);
       }
 
-      const response = await authAPI.register(dataToSend);
+      const response = await authAPI.register(form);
 
       setSuccess(response.data.message);
 
-      if (response.data.needsApproval) {
-        setTimeout(() => {
-          navigate('/login');
-        }, 4000);
-      } else {
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      }
+      setTimeout(() => {
+        navigate('/login');
+      }, response.data.needsApproval ? 4000 : 2000);
     } catch (error) {
       console.error('Registration error:', error);
       if (error.response?.data?.message) {

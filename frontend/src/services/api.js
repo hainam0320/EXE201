@@ -20,27 +20,7 @@ api.interceptors.request.use((config) => {
 
 export const authAPI = {
   login: (data) => api.post('/auth/login', data),
-  register: (data) => {
-    const formData = new FormData();
-    
-    // Thêm các trường thông tin cơ bản
-    Object.keys(data).forEach(key => {
-      if (key !== 'logo' && key !== 'coverImage' && key !== 'receipt') {
-        formData.append(key, data[key]);
-      }
-    });
-    
-    // Thêm các file nếu có
-    if (data.logo) {
-      formData.append('logo', data.logo);
-    }
-    if (data.coverImage) {
-      formData.append('coverImage', data.coverImage);
-    }
-    if (data.receipt) {
-      formData.append('receipt', data.receipt);
-    }
-
+  register: (formData) => {
     return api.post('/auth/register', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'

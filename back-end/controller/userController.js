@@ -4,127 +4,107 @@ const { hashPassword, comparePassword, generateToken } = require('../utils/authH
 const nodemailer = require('nodemailer');
 const Order = require('../model/orderModel');
 const Product = require('../model/productModel');
-const multer = require('multer');
-const path = require('path');
+const { upload } = require('../middleware/uploadMiddleware');
 
-// Cấu hình multer để lưu file hóa đơn
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/receipts/');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({
-  storage: storage,
-  fileFilter: function (req, file, cb) {
-    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
-      return cb(new Error('Chỉ chấp nhận file ảnh!'), false);
-    }
-    cb(null, true);
-  }
-}).single('receipt');
+// Sử dụng middleware upload cho route đăng ký
+exports.uploadReceipt = upload.single('receipt');
 
 exports.userRegister = async (req, res) => {
-  upload(req, res, async (err) => {
-    try {
-      if (err) {
-        console.error('Upload error:', err);
-        return res.status(400).send({ message: err.message });
-      }
+  try {
+    const { userName, lastName, email, phone, password, role } = req.body;
 
-      const { userName, lastName, email, phone, password, role } = req.body;
-      
-      // Debug log để kiểm tra data nhận được
-      console.log('Registration data received:', {
-        userName, lastName, email, phone, 
-        role: role || 'undefined',
-        bodyKeys: Object.keys(req.body),
-        file: req.file
-      });
+    // Debug log để kiểm tra data nhận được
+    console.log('Registration data received:', {
+      userName, lastName, email, phone, 
+      role: role || 'undefined',
+      bodyKeys: Object.keys(req.body)
+    });
 
-      if (!userName || !lastName || !email || !phone || !password) {
-        return res
-          .status(400)
-          .send({ message: "Please provide all require fields" });
-      }
+    console.log('Received files:', req.files);
 
-      // Kiểm tra nếu là seller thì phải có hóa đơn
-      if (role === 'seller' && !req.file) {
-        return res
-          .status(400)
-          .send({ message: "Vui lòng upload hóa đơn thanh toán" });
-      }
-
-      // Logic xử lý role và status
-      let userRole = 'user';
-      let userStatus = 'active';
-      let requestedRole = null;
-      let requestType = null;
-
-      if (role === 'buyer') {
-        userRole = 'buyer';
-        userStatus = 'active'; // Buyer được active ngay
-      } else if (role === 'seller') {
-        userRole = 'user'; // Vẫn là user cho đến khi admin duyệt
-        userStatus = 'pending'; // Pending để chờ admin duyệt
-        requestedRole = 'seller'; // Lưu role được yêu cầu
-        requestType = 'registration'; // Đánh dấu là yêu cầu đăng ký
-      }
-      
-      console.log('Final role assigned:', { userRole, userStatus, requestedRole, requestType });
-
-      const existingUser = await User.findOne({ email });
-
-      if (existingUser) {
-        return res
-          .status(400)
-          .send({ message: "User already register. Please login" });
-      }
-
-      const hashedPassword = await hashPassword(password);
-
-      const newUser = await User.create({
-        userName,
-        lastName,
-        email,
-        phone,
-        password: hashedPassword,
-        role: userRole,
-        status: userStatus,
-        requestedRole: requestedRole,
-        requestType: requestType,
-        receipt: req.file ? `/uploads/receipts/${req.file.filename}` : null
-      });
-
-      console.log('User created:', { 
-        role: newUser.role, 
-        status: newUser.status, 
-        requestedRole: newUser.requestedRole,
-        requestType: newUser.requestType,
-        receipt: newUser.receipt
-      });
-
-      // Tùy chỉnh message dựa trên role
-      let message = "User register successfully";
-      if (role === 'seller') {
-        message = "Đăng ký thành công! Tài khoản người bán của bạn đang chờ admin phê duyệt.";
-      } else if (role === 'buyer') {
-        message = "Đăng ký thành công! Bạn có thể đăng nhập ngay.";
-      }
-
+    // Kiểm tra các trường bắt buộc
+    if (!userName || !lastName || !email || !phone || !password) {
       return res
-        .status(201)
-        .send({ message, newUser, needsApproval: role === 'seller' });
-    } catch (error) {
-      console.error('Registration error:', error);
-      return res.status(500).send({ message: "Something went wrong" });
+        .status(400)
+        .send({ message: "Please provide all required fields." });
     }
-  });
+
+    // Xử lý role
+    let userRole = 'user';
+    let userStatus = 'active';
+    let requestedRole = null;
+    let isPremium = false;
+    let premiumStartDate = null;
+
+    if (role === 'buyer') {
+      userRole = 'buyer';
+      userStatus = 'active';
+    } else if (role === 'seller') {
+      // Kiểm tra đã upload hóa đơn chưa
+      if (!req.files?.receipt?.[0]) {
+        return res.status(400).json({ message: 'Vui lòng gửi hóa đơn thanh toán (receipt).' });
+      }
+
+      userRole = 'user';          // Tạm thời vẫn là user
+      userStatus = 'pending';     // Chờ admin duyệt
+      requestedRole = 'seller';   // Ghi nhận yêu cầu làm seller
+      isPremium = true;          // Tự động kích hoạt premium
+      premiumStartDate = new Date(); // Ngày bắt đầu premium
+    }
+
+    console.log('Final role assigned:', { userRole, userStatus, requestedRole, isPremium, premiumStartDate });
+
+    // Kiểm tra email đã tồn tại chưa
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res
+        .status(400)
+        .send({ message: "User already registered. Please login." });
+    }
+
+    // Hash mật khẩu
+    const hashedPassword = await hashPassword(password);
+
+    // Tạo người dùng mới với đường dẫn receipt nếu có
+    const newUser = await User.create({
+      userName,
+      lastName,
+      email,
+      phone,
+      password: hashedPassword,
+      role: userRole,
+      status: userStatus,
+      requestedRole: requestedRole,
+      receipt: req.files?.receipt?.[0] ? `/uploads/receipts/${req.files.receipt[0].filename}` : undefined,
+      isPremium,
+      premiumStartDate
+    });
+
+    console.log('User created:', { 
+      role: newUser.role, 
+      status: newUser.status, 
+      requestedRole: newUser.requestedRole,
+      receipt: newUser.receipt,
+      isPremium: newUser.isPremium,
+      premiumStartDate: newUser.premiumStartDate
+    });
+
+    // Trả về phản hồi thành công
+    let message = "User registered successfully.";
+    if (role === 'seller') {
+      message = "Đăng ký thành công! Tài khoản người bán của bạn đang chờ admin phê duyệt.";
+    } else if (role === 'buyer') {
+      message = "Đăng ký thành công! Bạn có thể đăng nhập ngay.";
+    }
+
+    return res.status(201).send({ message, newUser, needsApproval: role === 'seller' });
+
+  } catch (error) {
+    console.error('Registration error:', error);
+    return res.status(500).send({ message: "Something went wrong." });
+  }
 };
+
 
 exports.userLogin = async (req, res) => {
   try {
@@ -154,8 +134,6 @@ exports.userLogin = async (req, res) => {
           requestedRole: isUser.requestedRole
         });
     }
-
-    // Kiểm tra nếu là seller bị khóa do hết hạn premium
     if (isUser.status === 'blocked' && isUser.role === 'seller' && !isUser.isPremium) {
       return res
         .status(403)
@@ -415,48 +393,152 @@ exports.updateUserRole = async (req, res) => {
 // Approve seller request
 exports.approveSellerRequest = async (req, res) => {
   try {
+    console.log('=== APPROVE SELLER REQUEST - DETAILED DEBUG ===');
+    console.log('Request params:', req.params);
+    console.log('Request body:', req.body);
+    console.log('userId:', req.params.userId);
+    console.log('action:', req.body.action);
+
     const { userId } = req.params;
     const { action } = req.body;
 
-    const user = await User.findById(userId);
+    if (!userId || !action) {
+      console.log('Missing required fields:', { userId, action });
+      return res.status(400).json({ message: "Thiếu thông tin cần thiết!" });
+    }
 
+    console.log('Finding user with ID:', userId);
+    const user = await User.findById(userId);
+    
     if (!user) {
-      return res.status(404).send({ message: "Không tìm thấy người dùng" });
+      console.log('User not found with ID:', userId);
+      return res.status(404).json({ message: "Không tìm thấy người dùng!" });
+    }
+
+    console.log('User found:', {
+      id: user._id,
+      email: user.email,
+      status: user.status,
+      role: user.role,
+      requestedRole: user.requestedRole,
+      isPremium: user.isPremium,
+      premiumStartDate: user.premiumStartDate
+    });
+
+    // Kiểm tra điều kiện hợp lệ
+    const isValidRequest = user.status === 'pending' && user.requestedRole === 'seller';
+    console.log('Request validation:', {
+      currentStatus: user.status,
+      currentRequestedRole: user.requestedRole,
+      isValidRequest
+    });
+
+    if (!isValidRequest) {
+      console.log('Invalid request conditions:', {
+        status: user.status,
+        requestedRole: user.requestedRole
+      });
+      return res.status(400).json({ 
+        message: "Không có yêu cầu seller nào để xử lý!",
+        details: {
+          status: user.status,
+          requestedRole: user.requestedRole
+        }
+      });
     }
 
     if (action === 'approve') {
-      if (user.requestType === 'premium_renewal') {
-        // Xử lý phê duyệt gia hạn premium
-        user.isPremium = true;
-        user.premiumStartDate = new Date();
-        user.status = 'active';
-      } else {
-        // Xử lý phê duyệt đăng ký seller
-        user.role = 'seller';
-        user.status = 'active';
-        user.isPremium = true;
-        user.premiumStartDate = new Date();
+      console.log('Starting approval process...');
+      
+      // Lưu trạng thái cũ để debug
+      const oldState = {
+        role: user.role,
+        status: user.status,
+        requestedRole: user.requestedRole,
+        isPremium: user.isPremium,
+        premiumStartDate: user.premiumStartDate
+      };
+      console.log('Old state:', oldState);
+
+      // Tính số ngày premium còn lại
+      const premiumDuration = 30; // 30 ngày
+      const startDate = user.premiumStartDate || new Date();
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + premiumDuration);
+      const remainingDays = Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24));
+
+      // Cập nhật thông tin - giữ nguyên isPremium và premiumStartDate
+      const updateResult = await User.findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            role: 'seller',
+            status: 'active',
+            requestedRole: null,
+            isPremium: true,
+            premiumStartDate: user.premiumStartDate || new Date()
+          }
+        },
+        { new: true, runValidators: true }
+      );
+
+      console.log('Update result:', updateResult);
+
+      if (!updateResult) {
+        throw new Error('Failed to update user');
       }
-      user.requestedRole = null;
-      user.requestType = null;
+
+      return res.json({ 
+        message: "Đã duyệt tài khoản seller thành công!", 
+        user: updateResult,
+        premiumInfo: {
+          isPremium: true,
+          startDate: updateResult.premiumStartDate,
+          endDate: endDate,
+          remainingDays: remainingDays
+        }
+      });
     } else if (action === 'reject') {
-      user.status = 'rejected';
-      user.requestedRole = null;
-      user.requestType = null;
+      console.log('Rejecting seller request...');
+      const updateResult = await User.findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            status: 'rejected',
+            requestedRole: null,
+            isPremium: false,
+            premiumStartDate: null
+          }
+        },
+        { new: true, runValidators: true }
+      );
+
+      if (!updateResult) {
+        throw new Error('Failed to update user');
+      }
+
+      return res.json({ 
+        message: "Đã từ chối yêu cầu seller!", 
+        user: updateResult,
+        premiumInfo: {
+          isPremium: false,
+          remainingDays: 0
+        }
+      });
     } else {
-      return res.status(400).send({ message: "Invalid action" });
+      console.log('Invalid action:', action);
+      return res.status(400).json({ message: "Action không hợp lệ!" });
     }
-
-    await user.save();
-
-    return res.status(200).send({ 
-      message: action === 'approve' ? "Đã phê duyệt yêu cầu thành công" : "Đã từ chối yêu cầu",
-      user 
-    });
-
   } catch (error) {
-    console.error("Approve seller request error:", error);
-    return res.status(500).send({ message: "Something went wrong" });
+    console.error("=== ERROR IN APPROVE SELLER ===");
+    console.error("Error details:", error);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+    return res.status(500).json({ 
+      message: "Lỗi server!", 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
@@ -481,85 +563,81 @@ exports.getPendingSellerRequests = async (req, res) => {
 
 // Get dashboard statistics
 exports.getDashboardStats = async (req, res) => {
-    try {
-        // Get total users
-        const totalUsers = await User.countDocuments();
+  try {
+    // Đếm tổng số users
+    const totalUsers = await User.countDocuments();
+    
+    // Đếm users theo role
+    const usersByRole = await User.aggregate([
+      { $group: { _id: '$role', count: { $sum: 1 } } }
+    ]);
+    
+    // Đếm users theo status
+    const usersByStatus = await User.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } } }
+    ]);
+    
+    // Đếm pending sellers
+    const pendingSellers = await User.countDocuments({ 
+      status: 'pending', 
+      requestedRole: 'seller' 
+    });
+    
+    // Users đăng ký trong 30 ngày qua
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const newUsersLast30Days = await User.countDocuments({
+      createdAt: { $gte: thirtyDaysAgo }
+    });
+    
+    // Users đăng ký hôm nay
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const newUsersToday = await User.countDocuments({
+      createdAt: { $gte: today, $lt: tomorrow }
+    });
 
-        // Get new users today
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const newUsersToday = await User.countDocuments({
-            createdAt: { $gte: today }
-        });
+    // Thống kê đơn hàng và doanh thu
+    const allOrders = await Order.find();
+    const paidOrders = allOrders.filter(order => order.paymentStatus === 'paid');
+    const totalOrders = allOrders.length;
+    const totalRevenue = paidOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
 
-        // Get new users in last 30 days
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const newUsersLast30Days = await User.countDocuments({
-            createdAt: { $gte: thirtyDaysAgo }
-        });
+    // Thống kê sản phẩm
+    const totalProducts = await Product.countDocuments();
 
-        // Get users by role
-        const usersByRole = await User.aggregate([
-            { $group: { _id: '$role', count: { $sum: 1 } } }
-        ]);
-
-        // Get users by status
-        const usersByStatus = await User.aggregate([
-            { $group: { _id: '$status', count: { $sum: 1 } } }
-        ]);
-
-        // Get pending sellers count
-        const pendingSellers = await User.countDocuments({
-            status: 'pending',
-            requestedRole: 'seller'
-        });
-
-        // Get premium users count
-        const premiumUsers = await User.countDocuments({
-            isPremium: true
-        });
-
-        // Get total products
-        const totalProducts = await Product.countDocuments();
-
-        // Get total orders and revenue
-        const orders = await Order.find();
-        const totalOrders = orders.length;
-        const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-
-        // Format the role and status counts into objects
-        const roleCountsObj = usersByRole.reduce((obj, item) => {
-            obj[item._id] = item.count;
-            return obj;
-        }, {});
-
-        const statusCountsObj = usersByStatus.reduce((obj, item) => {
-            obj[item._id] = item.count;
-            return obj;
-        }, {});
-
-        return res.status(200).send({
-            success: true,
-            data: {
-                totalUsers,
-                newUsersToday,
-                newUsersLast30Days,
-                usersByRole: roleCountsObj,
-                usersByStatus: statusCountsObj,
-                pendingSellers,
-                premiumUsers,
-                totalProducts,
-                totalOrders,
-                totalRevenue
-            }
-        });
-    } catch (error) {
-        console.error('Get dashboard stats error:', error);
-        return res.status(500).send({ message: "Có lỗi xảy ra khi lấy thống kê" });
-    }
+    res.json({
+      success: true,
+      data: {
+        totalUsers,
+        usersByRole: usersByRole.reduce((acc, item) => {
+          acc[item._id] = item.count;
+          return acc;
+        }, {}),
+        usersByStatus: usersByStatus.reduce((acc, item) => {
+          acc[item._id] = item.count;
+          return acc;
+        }, {}),
+        pendingSellers,
+        newUsersLast30Days,
+        newUsersToday,
+        totalOrders,
+        totalProducts,
+        totalRevenue
+      }
+    });
+  } catch (error) {
+    console.error("Dashboard stats error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error fetching dashboard statistics" 
+    });
+  }
 };
-
 exports.blockUser = async (req, res) => {
   try {
     const { userId } = req.params;
