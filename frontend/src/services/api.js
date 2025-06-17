@@ -63,8 +63,20 @@ export const orderAPI = {
   getAllOrders: () => api.get('/orders'),
   markPaid: (id) => api.post(`/orders/${id}/paid`),
   getByUser: (userId) => api.get(`/orders/user/${userId}`),
-  updateStatus: (id, status) => api.put(`/orders/${id}/status`, { status }),
+  updateStatus: (orderId, status) => {
+    return api.put(`/orders/${orderId}/status`, { status });
+  },
+  updateSellerStatus: (orderId, status) => {
+    return api.put(`/orders/${orderId}/seller-status`, { status });
+  },
   updatePaymentStatus: (id, paymentStatus) => api.put(`/orders/${id}/payment-status`, { paymentStatus }),
+  uploadBillImage: (orderId, file) => {
+    const formData = new FormData();
+    formData.append('billImage', file);
+    return api.post(`/orders/${orderId}/bill-image`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
 };
 
 export const wishlistAPI = {

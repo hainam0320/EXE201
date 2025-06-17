@@ -213,8 +213,8 @@ exports.markOrderPaid = async (req, res) => {
     try {
         const order = await Order.findById(req.params.id);
         if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
-        order.paymentStatus = 'paid';
-        order.status = 'confirmed';
+        order.paymentStatus = 'unpaid';
+        order.status = 'pending';
         await order.save();
         res.status(200).json({ success: true, data: order });
     } catch (err) {
@@ -234,5 +234,71 @@ exports.updatePaymentStatus = async (req, res) => {
         res.status(200).json({ success: true, data: order });
     } catch (error) {
         res.status(500).json({ success: false, error: 'Server Error' });
+    }
+};
+
+// Upload bill image for order
+exports.uploadBillImage = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+    // Lưu URL ảnh bill vào order
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    order.billImage = fileUrl;
+    order.paymentStatus = 'unpaid';
+    await order.save();
+    res.status(200).json({ success: true, data: order });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Update order status (Seller)
+exports.updateSellerOrderStatus = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: 'Order not found'
+            });
+        }
+
+        // Kiểm tra xem đơn hàng có thuộc shop của seller không
+        const shop = await Shop.findOne({ owner: req.user._id });
+        if (!shop) {
+            return res.status(404).json({
+                success: false,
+                message: 'Shop not found'
+            });
+        }
+
+        const hasShopItems = order.items.some(item => item.shop.equals(shop._id));
+        if (!hasShopItems) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to update this order'
+            });
+        }
+
+        // Cập nhật trạng thái
+        order.status = req.body.status;
+        await order.save();
+
+        res.status(200).json({
+            success: true,
+            data: order
+        });
+    } catch (error) {
+        console.error('Error in updateSellerOrderStatus:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error'
+        });
     }
 }; 

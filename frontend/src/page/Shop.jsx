@@ -210,7 +210,7 @@ const Shop = React.memo(({ onAddToCart }) => {
 
       <div className="flex-1">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Tất cả sản phẩm</h2>
+          <h2 className="text-2xl font-bold">Tất cả sản phẩm </h2>
           <span className="text-gray-600">{memoizedFilteredProducts.length} sản phẩm</span>
         </div>
 

@@ -27,6 +27,7 @@ const OrderManagement = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     fetchOrders();
@@ -136,23 +137,30 @@ const OrderManagement = () => {
                         {PAYMENT_STATUSES[order.paymentStatus] || order.paymentStatus}
                       </span>
                     </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Trạng thái giao hàng:</span>{' '}
+                      <span className="text-blue-600">
+                        {ORDER_STATUSES[order.status] || order.status}
+                      </span>
+                    </p>
                   </div>
+                  {order.billImage && (
+                    <div className="mt-2">
+                      <p className="text-sm font-medium mb-1">Ảnh bill thanh toán:</p>
+                      <img 
+                        src={order.billImage} 
+                        alt="Bill" 
+                        className="w-32 h-32 object-contain border cursor-pointer hover:opacity-90"
+                        onClick={() => setSelectedImage(order.billImage)}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-pink-600">
                     {order.totalAmount?.toLocaleString('vi-VN')}₫
                   </p>
-                  <select
-                    className="mt-2 px-3 py-1 border rounded-md text-sm"
-                    value={order.status}
-                    onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                  >
-                    {Object.entries(ORDER_STATUSES).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
+                
                   <select
                     className="mt-2 ml-2 px-3 py-1 border rounded-md text-sm"
                     value={order.paymentStatus}
@@ -185,6 +193,28 @@ const OrderManagement = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal phóng to ảnh */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="bg-white p-4 rounded-lg max-w-2xl max-h-[90vh] overflow-auto">
+            <img 
+              src={selectedImage} 
+              alt="Bill" 
+              className="w-full h-auto object-contain"
+            />
+            <button 
+              className="mt-4 bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700"
+              onClick={() => setSelectedImage(null)}
+            >
+              Đóng
+            </button>
+          </div>
         </div>
       )}
     </div>

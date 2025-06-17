@@ -44,6 +44,7 @@ const OrderSchema = new Schema({
   totalProductAmount: { type: Number, required: true },
   totalAmount: { type: Number, required: true },
   notes: { type: String },
+  billImage: { type: String }, // URL ảnh bill thanh toán
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
