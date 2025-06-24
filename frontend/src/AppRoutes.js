@@ -29,6 +29,7 @@ import PrivateRoute from './components/common/PrivateRoute';
 import Checkout from './components/buyer/Checkout';
 import OrderHistory from './components/buyer/OrderHistory';
 import CheckoutSuccess from './components/buyer/CheckoutSuccess';
+import AboutMe from './page/AboutMe';
 
 
 // Protected Route Component
@@ -61,6 +62,7 @@ function AppRoutes() {
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/blog" element={<BlogList />} />
           <Route path="/blog/:id" element={<BlogDetail />} />
+          <Route path="/about" element={<AboutMe />} />
 
           
           {/* Protected Routes */}
