@@ -65,19 +65,58 @@ const Home = () => {
 
   const banners = [
     {
-      image: '/banners/hoa.jpg',
-      title: 'Bộ sưu tập mùa xuân',
-      description: 'Khám phá những bó hoa tươi mới nhất của chúng tôi'
+      image: '/banners/501218654_676615968685898_5488618290692746123_n.jpg',
+    
+     
     },
     {
-      image: '/banners/hoa.jpg',
-      title: 'Ưu đãi đặc biệt',
-      description: 'Giảm giá lên đến 20% cho các đơn hàng trong tuần này'
+      image: '/banners/501218654_676615968685898_5488618290692746123_n.jpg',
+   
+    
     },
     {
-      image: '/banners/hoa.jpg',
-      title: 'Hoa cho mọi dịp',
-      description: 'Từ sinh nhật đến kỷ niệm - chúng tôi có tất cả'
+      image: '/banners/501218654_676615968685898_5488618290692746123_n.jpg',
+   
+    }
+  ];
+
+  // Thêm dữ liệu fix cứng cho hoa theo mùa
+  const seasonalFlowers = [
+    {
+      _id: 's1',
+      name: 'Bộ sưu tập Xuân',
+      image: '/category-images/Bo-hoa-cam-chuong-1440x1536.jpg',
+      description: 'Hoa đào, hoa mai, hoa cúc',
+      season: 'Xuân',
+      price: 850000,
+      discount: 10
+    },
+    {
+      _id: 's2',
+      name: 'Bộ sưu tập Hạ',
+      image: '/category-images/e7c8fe56263ff961a02e.jpg',
+      description: 'Hoa hướng dương, hoa sen',
+      season: 'Hạ',
+      price: 750000,
+      discount: 0
+    },
+    {
+      _id: 's3',
+      name: 'Bộ sưu tập Thu',
+      image: '/category-images/0f38196c66679b4b1e8ac6bc2093e296.jpg',
+      description: 'Hoa cúc, hoa hồng',
+      season: 'Thu',
+      price: 900000,
+      discount: 15
+    },
+    {
+      _id: 's4',
+      name: 'Bộ sưu tập Đông',
+      image: '/category-images/e0682db6bcbfbe19f3c54d2fedf0fdfa.jpg',
+      description: 'Hoa lan, hoa đồng tiền',
+      season: 'Đông',
+      price: 950000,
+      discount: 5
     }
   ];
 
@@ -308,6 +347,60 @@ const Home = () => {
                         </span>
                       )}
                     </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Seasonal Flowers Section */}
+        <div className="mt-16">
+          <h2 className="text-3xl font-bold text-center mb-8">Hoa theo mùa</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {seasonalFlowers.map(flower => (
+              <div
+                key={flower._id}
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+              >
+                <div className="relative">
+                  <div className="relative w-full pt-[100%]">
+                    <img
+                      src={flower.image}
+                      alt={flower.name}
+                      className="absolute top-0 left-0 w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.src = '/category-images/OIP.jpg';
+                      }}
+                    />
+                  </div>
+                  <div className="absolute top-4 right-4 bg-pink-500 text-white px-3 py-1 rounded-full text-sm">
+                    {flower.season}
+                  </div>
+                  {flower.discount > 0 && (
+                    <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm">
+                      -{flower.discount}%
+                    </div>
+                  )}
+                </div>
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">{flower.name}</h3>
+                  <p className="text-gray-600 text-sm mb-3">{flower.description}</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-pink-600 font-bold">
+                      {new Intl.NumberFormat('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND'
+                      }).format(flower.price * (1 - flower.discount / 100))}
+                    </span>
+                    {flower.discount > 0 && (
+                      <span className="text-sm text-gray-500 line-through">
+                        {new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND'
+                        }).format(flower.price)}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
