@@ -1,26 +1,92 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { productAPI, categoryAPI } from '../services/api';
+import { productAPI } from '../services/api';
 import ProductCard from '../components/common/ProductCard';
 
 const Home = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentBanner, setCurrentBanner] = useState(0);
+  const [currentCategoryPage, setCurrentCategoryPage] = useState(0);
+
+  // Fix cứng danh mục hoa
+  const categories = [
+    {
+      _id: '1',
+      name: 'Hoa Hồng',
+      image: '/category-images/0f38196c66679b4b1e8ac6bc2093e296.jpg',
+      description: 'Biểu tượng của tình yêu '
+    },
+    {
+      _id: '2',
+      name: 'Hoa Cúc',
+      image: '/category-images/350K.jpg',
+      description: 'Vẻ đẹp thuần khiết và tinh tế'
+    },
+    {
+      _id: '3',
+      name: 'Hoa Lan',
+      image: '/category-images/e0682db6bcbfbe19f3c54d2fedf0fdfa.jpg',
+      description: 'Sang trọng và quý phái'
+    },
+    {
+      _id: '4',
+      name: 'Hoa Ly',
+      image: '/category-images/OIP.jpg',
+      description: 'Thanh cao và kiêu sa'
+    },
+    {
+      _id: '5',
+      name: 'Hoa Tulip',
+      image: '/category-images/e7c8fe56263ff961a02e.jpg',
+      description: 'Tươi mới và tràn đầy sức sống'
+    },
+    {
+      _id: '6',
+      name: 'Hoa Hướng Dương',
+      image: '/category-images/ha.png',
+      description: 'Rực rỡ và tràn đầy năng lượng'
+    },
+    {
+      _id: '7',
+      name: 'Hoa Baby',
+      image: '/category-images/bo-hoa-baby-lon_-22-04-2019-09-37-13.jpg',
+      description: 'Nhẹ nhàng và tinh khôi'
+    },
+    {
+      _id: '8',
+      name: 'Hoa Cẩm Chướng',
+      image: '/category-images/Bo-hoa-cam-chuong-1440x1536.jpg',
+      description: 'Duyên dáng và đầy sức sống'
+    }
+  ];
+
+  const banners = [
+    {
+      image: '/banners/hoa.jpg',
+      title: 'Bộ sưu tập mùa xuân',
+      description: 'Khám phá những bó hoa tươi mới nhất của chúng tôi'
+    },
+    {
+      image: '/banners/hoa.jpg',
+      title: 'Ưu đãi đặc biệt',
+      description: 'Giảm giá lên đến 20% cho các đơn hàng trong tuần này'
+    },
+    {
+      image: '/banners/hoa.jpg',
+      title: 'Hoa cho mọi dịp',
+      description: 'Từ sinh nhật đến kỷ niệm - chúng tôi có tất cả'
+    }
+  ];
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [productsRes, categoriesRes] = await Promise.all([
-          productAPI.getFeatured(),
-          categoryAPI.getAll()
-        ]);
-
+        const productsRes = await productAPI.getFeatured();
         setProducts(productsRes.data.data || []);
-        setCategories(categoriesRes.data.data || []);
       } catch (error) {
         console.error('Error fetching data:', error);
         setError('Có lỗi xảy ra khi tải dữ liệu');
@@ -32,12 +98,40 @@ const Home = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    // Auto-advance carousel every 5 seconds
+    const timer = setInterval(() => {
+      setCurrentBanner((prev) => (prev + 1) % banners.length);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   const handleCategoryClick = (categoryId) => {
     navigate(`/shop?category=${categoryId}`);
   };
 
   const handleProductClick = (productId) => {
     navigate(`/product/${productId}`);
+  };
+
+  // Categories per page in the carousel
+  const CATEGORIES_PER_PAGE = 4;
+  
+  // Calculate total pages for categories
+  const totalCategoryPages = Math.ceil(categories.length / CATEGORIES_PER_PAGE);
+
+  // Handle category navigation
+  const handlePrevCategory = () => {
+    setCurrentCategoryPage((prev) => 
+      prev === 0 ? totalCategoryPages - 1 : prev - 1
+    );
+  };
+
+  const handleNextCategory = () => {
+    setCurrentCategoryPage((prev) => 
+      prev === totalCategoryPages - 1 ? 0 : prev + 1
+    );
   };
 
   if (loading) {
@@ -58,37 +152,120 @@ const Home = () => {
 
   return (
     <div className="bg-pink-50 min-h-screen">
-      <div className="container mx-auto px-4 py-8 space-y-12">
-        {/* Hero Section */}
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-            Chào mừng đến với HoaMuse
-          </h1>
-          <p className="text-lg text-gray-600 mb-8">
-            Khám phá bộ sưu tập hoa tươi độc đáo và xinh đẹp của chúng tôi
-          </p>
-          <button
-            onClick={() => navigate('/shop')}
-            className="bg-pink-600 text-white px-8 py-3 rounded-full hover:bg-pink-700 transition-colors"
+      {/* Banner Carousel */}
+      <div className="relative h-[500px] overflow-hidden">
+        {banners.map((banner, index) => (
+          <div
+            key={index}
+            className={`absolute w-full h-full transition-opacity duration-500 ${
+              currentBanner === index ? 'opacity-100' : 'opacity-0'
+            }`}
           >
-            Mua sắm ngay
-          </button>
+            <img
+              src={banner.image}
+              alt={banner.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.src = '/category-images/OIP.jpg';
+              }}
+            />
+            <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+              <div className="text-center text-white">
+                <h2 className="text-4xl font-bold mb-4">{banner.title}</h2>
+                <p className="text-xl">{banner.description}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+          {banners.map((_, index) => (
+            <button
+              key={index}
+              className={`w-3 h-3 rounded-full ${
+                currentBanner === index ? 'bg-white' : 'bg-white/50'
+              }`}
+              onClick={() => setCurrentBanner(index)}
+            />
+          ))}
         </div>
+      </div>
 
+      <div className="container mx-auto px-4 py-8 space-y-12">
         {/* Categories Section */}
         <div className="flex flex-col items-center text-center px-4">
           <h2 className="text-3xl font-bold mb-8">Danh mục hoa</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 w-full max-w-6xl">
-            {categories.map(category => (
-              <div
-                key={category._id}
-                onClick={() => handleCategoryClick(category._id)}
-                className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-1 cursor-pointer text-center"
+          <div className="relative w-full max-w-6xl">
+            <div className="overflow-hidden">
+              <div 
+                className="flex transition-transform duration-500 ease-in-out"
+                style={{ transform: `translateX(-${currentCategoryPage * 100}%)` }}
               >
-                <div className="text-4xl mb-2">🌸</div>
-                <h3 className="font-semibold text-gray-800">{category.name}</h3>
+                {Array.from({ length: totalCategoryPages }, (_, pageIndex) => (
+                  <div key={pageIndex} className="flex gap-6 min-w-full">
+                    {categories
+                      .slice(pageIndex * CATEGORIES_PER_PAGE, (pageIndex + 1) * CATEGORIES_PER_PAGE)
+                      .map(category => (
+                        <div
+                          key={category._id}
+                          onClick={() => handleCategoryClick(category._id)}
+                          className="flex-1 bg-white rounded-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-1 cursor-pointer overflow-hidden relative group"
+                        >
+                          <div className="relative h-48">
+                            <img
+                              src={category.image}
+                              alt={category.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.src = '/category-images/OIP.jpg';
+                              }}
+                            />
+                            <div className="absolute inset-x-0 bottom-0 bg-black bg-opacity-30 backdrop-blur-sm p-4 transform transition-transform duration-300">
+                              <h3 className="font-semibold text-white text-center">{category.name}</h3>
+                              <p className="text-white/80 text-sm mt-1">{category.description}</p>
+                            </div>
+                          </div>
+                        </div>
+                    ))}
+                    {pageIndex === totalCategoryPages - 1 && 
+                      Array.from({ length: CATEGORIES_PER_PAGE - (categories.length % CATEGORIES_PER_PAGE || CATEGORIES_PER_PAGE) }, (_, i) => (
+                        <div key={`placeholder-${i}`} className="flex-1" />
+                      ))
+                    }
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+            
+            {/* Navigation Buttons */}
+            <button
+              onClick={handlePrevCategory}
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-6 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 focus:outline-none"
+            >
+              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button
+              onClick={handleNextCategory}
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-6 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 focus:outline-none"
+            >
+              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            {/* Category Dots */}
+            <div className="flex justify-center mt-4 space-x-2">
+              {[...Array(totalCategoryPages)].map((_, index) => (
+                <button
+                  key={index}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    currentCategoryPage === index ? 'bg-pink-600' : 'bg-gray-300'
+                  }`}
+                  onClick={() => setCurrentCategoryPage(index)}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
