@@ -117,8 +117,10 @@ const Header = () => {
 
           <nav className="hidden md:flex space-x-8">
             <Link to="/" className="text-gray-700 hover:text-pink-600">Trang chủ</Link>
+            <Link to="/about" className="text-gray-700 hover:text-pink-600">Về chúng tôi</Link>
             <Link to="/shop" className="text-gray-700 hover:text-pink-600">Sản phẩm</Link>
             <Link to="/blog" className="text-gray-700 hover:text-pink-600">Blog</Link>
+      
             {currentUser?.role === 'seller' && <Link to="/seller/dashboard" className="text-gray-700 hover:text-pink-600">Quản lý</Link>}
             {currentUser?.role === 'admin' && <Link to="/admin/dashboard" className="text-gray-700 hover:text-pink-600">Admin</Link>}
           </nav>

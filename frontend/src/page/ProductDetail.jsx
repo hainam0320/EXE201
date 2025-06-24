@@ -178,7 +178,7 @@ const ProductDetail = ({ onAddToCart }) => {
 </div>
               <div className="flex flex-col space-y-2">
                 <span className="text-gray-600">Tình trạng:</span>
-                <span>{product.status ? 'Còn hàng' : 'Hết hàng'}</span>
+                <span>{product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}</span>
               </div>
               {/* Hiển thị tên shop */}
               {product.shop && (
@@ -196,51 +196,57 @@ const ProductDetail = ({ onAddToCart }) => {
 
           <div className="flex items-center space-x-4">
             {/* Số lượng */}
-            <div className="flex items-center border rounded-md">
-              <button
-                className="px-4 py-2 text-gray-600 hover:text-pink-600"
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              >
-                -
-              </button>
-              <input
-                type="number"
-                min="1"
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-16 text-center border-x py-2"
-              />
-              <button
-                className="px-4 py-2 text-gray-600 hover:text-pink-600"
-                onClick={() => setQuantity(quantity + 1)}
-              >
-                +
-              </button>
-            </div>
+            {currentUser?.role !== 'seller' && (
+              <div className="flex items-center border rounded-md">
+                <button
+                  className="px-4 py-2 text-gray-600 hover:text-pink-600"
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  min="1"
+                  value={quantity}
+                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-16 text-center border-x py-2"
+                />
+                <button
+                  className="px-4 py-2 text-gray-600 hover:text-pink-600"
+                  onClick={() => setQuantity(quantity + 1)}
+                >
+                  +
+                </button>
+              </div>
+            )}
 
-            {/* Thêm vào giỏ hàng */}
-            <button
-              onClick={handleAddToCart}
-              className="flex items-center space-x-2 bg-pink-600 text-white px-6 py-3 rounded-md hover:bg-pink-700 transition-colors"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              <span>Thêm vào giỏ hàng</span>
-            </button>
+            {/* Thêm vào giỏ hàng - Chỉ hiển thị khi không phải seller */}
+            {currentUser?.role !== 'seller' && (
+              <button
+                onClick={handleAddToCart}
+                className="flex items-center space-x-2 bg-pink-600 text-white px-6 py-3 rounded-md hover:bg-pink-700 transition-colors"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                <span>Thêm vào giỏ hàng</span>
+              </button>
+            )}
 
-            {/* Nút yêu thích */}
-            <button
-              onClick={handleToggleWishlist}
-              className={`p-3 rounded-md transition-colors border ${
-                isInWishlist(product._id)
-                  ? 'text-pink-600 border-pink-600'
-                  : 'text-gray-600 border-gray-300 hover:text-pink-600 hover:border-pink-600'
-              }`}
-              title={isInWishlist(product._id) ? 'Xóa khỏi yêu thích' : 'Thêm vào yêu thích'}
-            >
-              <Heart
-                className={`w-6 h-6 ${isInWishlist(product._id) ? 'fill-current' : ''}`}
-              />
-            </button>
+            {/* Nút yêu thích - Chỉ hiển thị khi không phải seller */}
+            {currentUser?.role !== 'seller' && (
+              <button
+                onClick={handleToggleWishlist}
+                className={`p-3 rounded-md transition-colors border ${
+                  isInWishlist(product._id)
+                    ? 'text-pink-600 border-pink-600'
+                    : 'text-gray-600 border-gray-300 hover:text-pink-600 hover:border-pink-600'
+                }`}
+                title={isInWishlist(product._id) ? 'Xóa khỏi yêu thích' : 'Thêm vào yêu thích'}
+              >
+                <Heart
+                  className={`w-6 h-6 ${isInWishlist(product._id) ? 'fill-current' : ''}`}
+                />
+              </button>
+            )}
           </div>
         </div>
       </div>
