@@ -267,12 +267,9 @@ const ShopForm = ({ initialData, mode = 'create' }) => {
                     onChange={handleCategoryChange}
                     className="w-full p-2 border rounded"
                 >
-                    <option value="">Chọn danh mục...</option>
-                    <option value="electronics">Điện tử</option>
-                    <option value="fashion">Thời trang</option>
-                    <option value="food">Thực phẩm</option>
+                   
                     <option value="beauty">Làm đẹp</option>
-                    <option value="home">Đồ gia dụng</option>
+                    <option value="home">Trang trí không gian</option>
                 </select>
             </div>
 

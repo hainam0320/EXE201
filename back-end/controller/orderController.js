@@ -8,7 +8,7 @@ const { validationResult } = require('express-validator');
 exports.getAllOrders = async (req, res) => {
     try {
         const orders = await Order.find()
-            .populate('buyer', 'name email')
+            .populate('buyer', 'userName lastName email')
             .populate('items.product', 'name price')
             .populate('items.shop', 'name')
             .sort({ createdAt: -1 });

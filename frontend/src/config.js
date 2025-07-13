@@ -1,4 +1,4 @@
-export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:9999';
+export const API_URL = process.env.REACT_APP_API_URL || 'http://103.90.224.148:9999';
 
 export const CLOUDINARY_URL = process.env.REACT_APP_CLOUDINARY_URL || 'https://api.cloudinary.com/v1_1/your-cloud-name';
  

@@ -1,6 +1,6 @@
 import axios from '../utils/axios';
 
-const API_URL = 'http://localhost:9999/api';
+const API_URL = 'http://103.90.224.148:9999/api';
 
 // Helper function to get headers with token
 const getHeaders = () => {

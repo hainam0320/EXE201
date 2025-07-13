@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const API_URL = 'http://localhost:9999/api';
+const API_URL = 'http://103.90.224.148:9999/api';
 
 const AddProductForm = ({ onAdd, onClose }) => {
   const [formData, setFormData] = useState({

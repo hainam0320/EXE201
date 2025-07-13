@@ -115,7 +115,7 @@ const OrderManagement = () => {
                 <div>
                   <h3 className="font-semibold">Đơn hàng #{order._id}</h3>
                   <p className="text-gray-600">
-                    Khách hàng: {order.buyer ? order.buyer.name : 'Không có thông tin'}
+                    Khách hàng: {order.buyer ? `${order.buyer.userName} ${order.buyer.lastName}` : 'Không có thông tin'}
                   </p>
                   <p className="text-sm text-gray-500">
                     Ngày đặt: {new Date(order.createdAt).toLocaleDateString('vi-VN')}

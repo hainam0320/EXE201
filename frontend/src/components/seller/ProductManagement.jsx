@@ -3,7 +3,7 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 import AddProductForm from './AddProductForm';
 import EditProductForm from './EditProductForm';
 
-const API_URL = 'http://localhost:9999/api';
+const API_URL = 'http://103.90.224.148:9999/api';
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);

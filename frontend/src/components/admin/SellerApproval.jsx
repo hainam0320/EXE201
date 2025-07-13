@@ -98,7 +98,7 @@ const SellerApproval = () => {
         console.log('Clicked image URL:', imageUrl); // Debug log
         if (imageUrl) {
             // Xử lý đường dẫn ảnh
-            const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:9999';
+            const baseUrl = process.env.REACT_APP_API_URL || 'http://103.90.224.148:9999';
             const normalizedPath = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
             const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${normalizedPath}`;
             console.log('Full image URL:', fullImageUrl); // Debug log
@@ -252,7 +252,7 @@ const SellerApproval = () => {
                                                 >
                                                     <div className="h-20 w-20 rounded overflow-hidden">
                                                         <img
-                                                            src={`${process.env.REACT_APP_API_URL || 'http://localhost:9999'}${seller.receipt.startsWith('/') ? '' : '/'}${seller.receipt}`}
+                                                            src={`${process.env.REACT_APP_API_URL || 'http://103.90.224.148:9999'}${seller.receipt.startsWith('/') ? '' : '/'}${seller.receipt}`}
                                                             alt="Hóa đơn"
                                                             className="h-full w-full object-cover transition-transform transform group-hover:scale-105"
                                                         />
