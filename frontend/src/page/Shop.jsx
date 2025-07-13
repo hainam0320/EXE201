@@ -17,6 +17,11 @@ const GROUPS = {
     '684ed6d8e40fef3a84665b39', // Màu Trắng
     '684ed777e40fef3a84665b3b', // Màu Vàng
     '684ed7abe40fef3a84665b3d', // Màu tím
+  ],
+  'Dịp tặng hoa': [
+    '6851887770332edff4f6cf0b', // Hoa Sinh Nhật
+    '685188e570332edff4f6cf0d', // Hoa Khai Trương
+    '6851891f70332edff4f6cf0f', // Hoa Tình Yêu
   ]
 };
 

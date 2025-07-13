@@ -99,10 +99,10 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white shadow-md sticky top-0 z-50">
+    <header className="bg-gradient-to-r from-pink-50 to-rose-50 shadow-sm sticky top-0 z-50 border-b border-pink-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-        <div className="flex items-center">
+          <div className="flex items-center">
             <Link 
               to="/"
               className="flex items-center"
@@ -116,29 +116,33 @@ const Header = () => {
           </div>
 
           <nav className="hidden md:flex space-x-8">
+
             <Link to="/" className="text-gray-700 hover:text-pink-600">Trang chủ</Link>
+            <Link to="/about" className="text-gray-700 hover:text-pink-600">Về chúng tôi</Link>
             <Link to="/shop" className="text-gray-700 hover:text-pink-600">Sản phẩm</Link>
             <Link to="/blog" className="text-gray-700 hover:text-pink-600">Blog</Link>
+      
             {currentUser?.role === 'seller' && <Link to="/seller/dashboard" className="text-gray-700 hover:text-pink-600">Quản lý</Link>}
             {currentUser?.role === 'admin' && <Link to="/admin/dashboard" className="text-gray-700 hover:text-pink-600">Admin</Link>}
+
           </nav>
 
           <div className="flex items-center space-x-4">
             <div className="relative" ref={searchRef}>
-              <button onClick={() => setShowSearch(!showSearch)} className="p-2 hover:bg-gray-100 rounded-full">
-                <Search className="h-5 w-5" />
+              <button onClick={() => setShowSearch(!showSearch)} className="p-2 hover:bg-pink-100/50 rounded-full transition-colors">
+                <Search className="h-5 w-5 text-gray-600 hover:text-pink-600" />
               </button>
               {showSearch && (
-                <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl p-4 z-50">
+                <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl p-4 z-50 border border-pink-100">
                   <form onSubmit={handleSearch} className="flex items-center space-x-2">
                     <input
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Tìm kiếm hoa..."
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:border-pink-500"
+                      className="flex-1 px-4 py-2 border border-pink-200 rounded-full focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
                       autoFocus
                     />
-                    <button type="submit" className="p-2 bg-pink-600 text-white rounded-full hover:bg-pink-700">
+                    <button type="submit" className="p-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-full hover:from-pink-600 hover:to-rose-600 transition-all duration-300 shadow-sm hover:shadow">
                       <Search className="h-5 w-5" />
                     </button>
                   </form>
@@ -152,7 +156,7 @@ const Header = () => {
                             setShowSearch(false);
                             setSearchTerm('');
                           }}
-                          className="flex items-center p-2 space-x-4 hover:bg-gray-50 rounded-lg cursor-pointer"
+                          className="flex items-center p-2 space-x-4 hover:bg-pink-50 rounded-lg cursor-pointer transition-colors"
                         >
                           <img
                             src={product.image}
@@ -179,13 +183,17 @@ const Header = () => {
               )}
             </div>
 
-            {currentUser && <Link to="/wishlist" className="p-2 hover:bg-gray-100 rounded-full"><Heart className="h-5 w-5" /></Link>}
+            {currentUser && (
+              <Link to="/wishlist" className="p-2 hover:bg-pink-100/50 rounded-full transition-colors">
+                <Heart className="h-5 w-5 text-gray-600 hover:text-pink-600" />
+              </Link>
+            )}
 
             {currentUser?.role === 'buyer' && (
-              <Link to="/cart" className="relative p-2 hover:bg-gray-100 rounded-full">
-                <ShoppingCart className="h-5 w-5" />
+              <Link to="/cart" className="relative p-2 hover:bg-pink-100/50 rounded-full transition-colors">
+                <ShoppingCart className="h-5 w-5 text-gray-600 hover:text-pink-600" />
                 {cartItems.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-pink-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center shadow-sm">
                     {cartItems.length}
                   </span>
                 )}
@@ -194,20 +202,23 @@ const Header = () => {
 
             {currentUser ? (
               <div className="relative">
-                <button onClick={() => setShowMenu(!showMenu)} className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-full">
-                  <User className="h-5 w-5" />
-                  <span className="hidden md:block">{currentUser.name}</span>
+                <button 
+                  onClick={() => setShowMenu(!showMenu)} 
+                  className="flex items-center space-x-2 p-2 hover:bg-pink-100/50 rounded-full transition-colors"
+                >
+                  <User className="h-5 w-5 text-gray-600 hover:text-pink-600" />
+                  <span className="hidden md:block text-gray-700 hover:text-pink-600">{currentUser.name}</span>
                 </button>
                 {showMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                    <Link to="/profile" className="block px-4 py-2 text-sm hover:bg-gray-100" onClick={() => setShowMenu(false)}>Hồ sơ cá nhân</Link>
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-10 border border-pink-100">
+                    <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors" onClick={() => setShowMenu(false)}>Hồ sơ cá nhân</Link>
                     {currentUser.role === 'buyer' && (
-                      <Link to="/order-history" className="block px-4 py-2 text-sm hover:bg-gray-100" onClick={() => setShowMenu(false)}>Lịch sử đơn hàng</Link>
+                      <Link to="/order-history" className="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors" onClick={() => setShowMenu(false)}>Lịch sử đơn hàng</Link>
                     )}
                     {currentUser.role === 'seller' && (
                       <>
                         {premiumInfo && premiumInfo.isPremium ? (
-                          <div className="px-4 py-2 text-sm bg-yellow-50">
+                          <div className="px-4 py-2 text-sm bg-yellow-50/50">
                             <div className="flex items-center space-x-2 text-yellow-700">
                               <Crown className="h-4 w-4" />
                               <span className="font-medium">Premium</span>
@@ -223,7 +234,7 @@ const Header = () => {
                             )}
                           </div>
                         ) : (
-                          <div className="px-4 py-2 text-sm bg-red-50">
+                          <div className="px-4 py-2 text-sm bg-red-50/50">
                             <div className="flex items-center space-x-2 text-red-700">
                               <AlertTriangle className="h-4 w-4" />
                               <span className="font-medium">Premium hết hạn</span>
@@ -233,22 +244,22 @@ const Header = () => {
                             </div>
                           </div>
                         )}
-                        <Link to="/seller/products" className="block px-4 py-2 text-sm hover:bg-gray-100" onClick={() => setShowMenu(false)}>Quản lý sản phẩm</Link>
-                        <Link to="/seller/orders" className="block px-4 py-2 text-sm hover:bg-gray-100" onClick={() => setShowMenu(false)}>Đơn hàng bán</Link>
+                        <Link to="/seller/products" className="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors" onClick={() => setShowMenu(false)}>Quản lý sản phẩm</Link>
+                        <Link to="/seller/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors" onClick={() => setShowMenu(false)}>Đơn hàng bán</Link>
                       </>
                     )}
                     {currentUser.role === 'admin' && (
-                      <Link to="/admin/dashboard" className="block px-4 py-2 text-sm hover:bg-gray-100" onClick={() => setShowMenu(false)}>Admin Dashboard</Link>
+                      <Link to="/admin/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors" onClick={() => setShowMenu(false)}>Admin Dashboard</Link>
                     )}
-                    <Link to="/change-password" className="block px-4 py-2 text-sm hover:bg-gray-100" onClick={() => setShowMenu(false)}>Đổi mật khẩu</Link>
-                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Đăng xuất</button>
+                    <Link to="/change-password" className="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors" onClick={() => setShowMenu(false)}>Đổi mật khẩu</Link>
+                    <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors">Đăng xuất</button>
                   </div>
                 )}
               </div>
             ) : (
               <div className="space-x-2">
-                <Link to="/login" className="px-4 py-2 border border-pink-600 text-pink-600 rounded hover:bg-pink-50">Đăng nhập</Link>
-                <Link to="/register" className="px-4 py-2 bg-pink-600 text-white rounded hover:bg-pink-700">Đăng ký</Link>
+                <Link to="/login" className="px-4 py-2 border border-pink-500 text-pink-600 rounded-full hover:bg-pink-50 transition-colors">Đăng nhập</Link>
+                <Link to="/register" className="px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-full hover:from-pink-600 hover:to-rose-600 transition-all duration-300 shadow-sm hover:shadow">Đăng ký</Link>
               </div>
             )}
           </div>

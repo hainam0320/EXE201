@@ -46,7 +46,7 @@ const CartScreen = () => {
   return (
     <div className="max-w-4xl mx-auto">
       <h2 className="text-2xl font-bold mb-6">Giỏ hàng</h2>
-      <h3>Năng lực bọn mình có hạn vui lòng chỉ mua một shop</h3>
+    
 
       {cartItems.length === 0 ? (
         <div className="text-center py-8">
