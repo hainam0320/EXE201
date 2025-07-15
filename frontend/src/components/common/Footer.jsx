@@ -30,19 +30,19 @@ const Footer = () => {
               </a>
             </li>
             <li>
-              <a href="#" className="hover:text-pink-600 transition-colors duration-300 flex items-center">
+              <a href="shop" className="hover:text-pink-600 transition-colors duration-300 flex items-center">
                 <span className="h-1 w-1 bg-pink-400 rounded-full mr-2"></span>
                 Sản phẩm
               </a>
             </li>
             <li>
-              <a href="#" className="hover:text-pink-600 transition-colors duration-300 flex items-center">
+              <a href="about" className="hover:text-pink-600 transition-colors duration-300 flex items-center">
                 <span className="h-1 w-1 bg-pink-400 rounded-full mr-2"></span>
                 Giới thiệu
               </a>
             </li>
             <li>
-              <a href="#" className="hover:text-pink-600 transition-colors duration-300 flex items-center">
+              <a href="https://www.facebook.com/profile.php?id=100090125010846" target="_blank" rel="noopener noreferrer" className="hover:text-pink-600 transition-colors duration-300 flex items-center">
                 <span className="h-1 w-1 bg-pink-400 rounded-full mr-2"></span>
                 Liên hệ
               </a>
@@ -57,7 +57,7 @@ const Footer = () => {
               <div className="p-2 bg-white rounded-full shadow-sm mr-2">
                 <Phone className="h-4 w-4 text-pink-500" />
               </div>
-              0123 456 789
+              0388552961
             </li>
             <li className="flex items-center hover:text-pink-600 transition-colors duration-300 cursor-pointer">
               <div className="p-2 bg-white rounded-full shadow-sm mr-2">

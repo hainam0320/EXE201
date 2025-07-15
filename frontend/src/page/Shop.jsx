@@ -3,6 +3,7 @@ import { Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ProductCard from '../components/common/ProductCard';
 import { productAPI, categoryAPI } from '../services/api';
+import { Pagination } from 'antd';
 
 const GROUPS = {
   'Loại hoa': [
@@ -42,6 +43,8 @@ const Shop = React.memo(({ onAddToCart }) => {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 6;
 
   useEffect(() => {
     let isMounted = true;
@@ -115,6 +118,17 @@ const Shop = React.memo(({ onAddToCart }) => {
   const memoizedCategories = useMemo(() => Array.isArray(categories) ? categories : [], [categories]);
   const groupedCategories = useMemo(() => groupCategories(memoizedCategories), [memoizedCategories]);
   const memoizedFilteredProducts = useMemo(() => Array.isArray(filteredProducts) ? filteredProducts : [], [filteredProducts]);
+
+  // Tính toán sản phẩm hiển thị trên trang hiện tại
+  const paginatedProducts = useMemo(() => {
+    const startIdx = (currentPage - 1) * pageSize;
+    return memoizedFilteredProducts.slice(startIdx, startIdx + pageSize);
+  }, [memoizedFilteredProducts, currentPage]);
+
+  // Reset về trang 1 khi filter thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredProducts]);
 
   const handleViewDetail = (productId) => {
     navigate(`/products/${productId}`);
@@ -219,17 +233,28 @@ const Shop = React.memo(({ onAddToCart }) => {
           <span className="text-gray-600">{memoizedFilteredProducts.length} sản phẩm</span>
         </div>
 
-        {memoizedFilteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {memoizedFilteredProducts.map(product => (
-              <ProductCard 
-                key={product?._id || Math.random()} 
-                product={product} 
-                onAddToCart={onAddToCart}
-                onViewDetail={() => handleViewDetail(product._id)}
+        {paginatedProducts.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paginatedProducts.map(product => (
+                <ProductCard 
+                  key={product?._id || Math.random()} 
+                  product={product} 
+                  onAddToCart={onAddToCart}
+                  onViewDetail={() => handleViewDetail(product._id)}
+                />
+              ))}
+            </div>
+            <div className="flex justify-center mt-8">
+              <Pagination
+                current={currentPage}
+                total={memoizedFilteredProducts.length}
+                pageSize={pageSize}
+                onChange={setCurrentPage}
+                showSizeChanger={false}
               />
-            ))}
-          </div>
+            </div>
+          </>
         ) : (
           <div className="text-center py-10 text-gray-500">
             Không tìm thấy sản phẩm nào phù hợp với bộ lọc

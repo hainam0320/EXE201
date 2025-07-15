@@ -83,40 +83,40 @@ const Home = () => {
   // Thêm dữ liệu fix cứng cho hoa theo mùa
   const seasonalFlowers = [
     {
-      _id: 's1',
-      name: 'Bộ sưu tập Xuân',
-      image: '/category-images/Bo-hoa-cam-chuong-1440x1536.jpg',
-      description: 'Hoa đào, hoa mai, hoa cúc',
+      _id: '68722b492f7f7a1a4efcb10c',
+      name: 'Hoa tú cầu tím mộng mơ',
+      image: 'http://103.90.224.148:9999/uploads/1752312649249-510813118.webp',
+      description: 'tú cầu',
       season: 'Xuân',
-      price: 850000,
-      discount: 10
-    },
-    {
-      _id: 's2',
-      name: 'Bộ sưu tập Hạ',
-      image: '/category-images/e7c8fe56263ff961a02e.jpg',
-      description: 'Hoa hướng dương, hoa sen',
-      season: 'Hạ',
-      price: 750000,
+      price: 300000,
       discount: 0
     },
     {
-      _id: 's3',
-      name: 'Bộ sưu tập Thu',
-      image: '/category-images/0f38196c66679b4b1e8ac6bc2093e296.jpg',
-      description: 'Hoa cúc, hoa hồng',
-      season: 'Thu',
-      price: 900000,
-      discount: 15
+      _id: '686fe4b039eff785aa7e697b',
+      name: 'Hoa Cúc Vàng',
+      image: 'http://103.90.224.148:9999/uploads/1752163504802-519503600.png',
+      description: 'Hoa tràng trí,sự kiện',
+      season: 'Hạ',
+      price: 150000,
+      discount: 0
     },
     {
-      _id: 's4',
-      name: 'Bộ sưu tập Đông',
-      image: '/category-images/e0682db6bcbfbe19f3c54d2fedf0fdfa.jpg',
-      description: 'Hoa lan, hoa đồng tiền',
+      _id: '68722e512f7f7a1a4efcb230',
+      name: 'Bó hoa hồng đỏ',
+      image: 'http://103.90.224.148:9999/uploads/1752313425491-297820903.jpg',
+      description: 'Hoa hồng đỏ thơm mát',
+      season: 'Thu',
+      price: 300000,
+      discount: 0
+    },
+    {
+      _id: '6870e55b671781b359c8d8b9',
+      name: 'Lẵng hoa lan trắng cao cấp',
+      image: 'http://103.90.224.148:9999/uploads/1752229211874-442203253.jpg',
+      description: 'Hoa cao cấp',
       season: 'Đông',
-      price: 950000,
-      discount: 5
+      price: 550000,
+      discount: 0
     }
   ];
 
@@ -361,7 +361,8 @@ const Home = () => {
             {seasonalFlowers.map(flower => (
               <div
                 key={flower._id}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
+                onClick={() => handleProductClick(flower._id)}
               >
                 <div className="relative">
                   <div className="relative w-full pt-[100%]">
