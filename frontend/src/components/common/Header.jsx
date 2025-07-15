@@ -244,7 +244,7 @@ const Header = () => {
                             </div>
                           </div>
                         )}
-                        <Link to="/seller/products" className="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors" onClick={() => setShowMenu(false)}>Quản lý sản phẩm</Link>
+                        <Link to="/seller/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors" onClick={() => setShowMenu(false)}>Quản lý sản phẩm</Link>
                         <Link to="/seller/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors" onClick={() => setShowMenu(false)}>Đơn hàng bán</Link>
                       </>
                     )}

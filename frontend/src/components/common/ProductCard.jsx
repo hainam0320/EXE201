@@ -92,16 +92,7 @@ const ProductCard = ({ product, onAddToCart, onViewDetail }) => {
               <ShoppingCart className="w-5 h-5" />
             </button>
 
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                onViewDetail && onViewDetail(product._id);
-              }}
-              className="p-2 text-gray-600 hover:text-pink-600 transition-colors"
-              title="Xem chi tiết"
-            >
-              <Eye className="w-5 h-5" />
-            </button>
+            {/* Đã xóa nút Eye (xem chi tiết) */}
 
             <button
               onClick={handleToggleWishlist}
